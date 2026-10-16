@@ -45,7 +45,7 @@ The database configuration is kept under `C:\ProgramData\Cashier`, outside the i
 
 ### GitHub Releases auto-update
 
-The application checks `https://raw.githubusercontent.com/jkhaled497-lgtm/CashierApp/main/version.xml` after startup. `version.xml` in this repository is an initial manifest example; its release URL is not usable until a matching ZIP asset and GitHub Release have been published. AutoUpdater.NET is configured to hide skip/remind-later options, treat every newer version as mandatory, suppress update-check errors/no-update messages, and extract a clean ZIP into the application's dedicated installation directory. Do not run it from a USB root or a folder containing user files.
+The login screen displays the installed version and has a link to check for and install the latest version from `https://raw.githubusercontent.com/jkhaled497-lgtm/CashierApp/main/version.xml`. The check starts when the user clicks the link. When an update exists, AutoUpdater.NET downloads and installs it automatically; the client does not need to visit the customer computer or manually replace its files. Update-check errors are shown. Do not install or run the application from a USB root or a folder containing user files.
 
 The package reference is already installed in the WPF project. To add it to a fresh checkout:
 
@@ -59,7 +59,7 @@ Publish a self-contained single-file x64 build:
 dotnet publish src\Cashier.UI\Cashier.UI.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:IncludeAllContentForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=None -p:DebugSymbols=false
 ```
 
-The publish directory is `src\Cashier.UI\bin\Release\net8.0-windows\win-x64\publish`. `appsettings.json` is deliberately not published: supply the machine-level configuration above on the client. Zip the *contents* of the publish directory (so `Cashier.UI.exe` is at the ZIP root), not its parent directory and not GitHub's automatically generated source ZIP. Publish that ZIP as the asset `Cashier.UI-win-x64.zip` on a GitHub Release whose tag matches the manifest version. For every bug-fix release, increment `<Version>` in `src\Cashier.UI\Cashier.UI.csproj`, publish and ZIP the complete output again, upload it as a release asset, and update `<version>`, `<url>`, and `<changelog>` in `version.xml`. The manifest version must be four-part numeric (for example `1.0.1.0`).
+To release an update, change `<Version>` in `src\Cashier.UI\Cashier.UI.csproj` (this is the version displayed under the login button), publish and ZIP the new build, then upload the ZIP as `Cashier.UI-win-x64.zip` to a GitHub Release. Use the same version with four numeric parts for the release tag and `<version>` in `version.xml` (for example, project version `1.0.1` corresponds to manifest/tag version `1.0.1.0`). Update `<url>` and `<changelog>` in `version.xml` to point at that release. Publish the changed `version.xml` to the repository's `main` branch. These are the two version locations to update: `src\Cashier.UI\Cashier.UI.csproj` for the build and `version.xml` for the online update manifest. After the release is published, customer installations fetch the manifest and update themselves when the user clicks the login-screen link; no version number or files need to be entered on the customer computer.
 
 For example, after building and creating a release ZIP, create the ZIP from PowerShell with:
 

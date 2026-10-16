@@ -19,6 +19,9 @@ namespace Cashier.UI;
 
 public partial class App : System.Windows.Application
 {
+    private const string UpdateManifestUrl =
+        "https://raw.githubusercontent.com/jkhaled497-lgtm/CashierApp/main/version.xml";
+
     private static readonly (string Key, string Light, string Dark)[] ThemeColors =
     [
         ("WindowBackgroundBrush", "#FFF1F5FB", "#FF121A29"),
@@ -37,6 +40,27 @@ public partial class App : System.Windows.Application
 
     private IHost? host;
     public static IServiceProvider Services => ((App)System.Windows.Application.Current).host!.Services;
+    public static string CurrentVersion =>
+        typeof(App).Assembly.GetName().Version?.ToString(3) ?? "غير معروف";
+
+    public static void CheckForUpdates(System.Windows.Window owner)
+    {
+        AutoUpdater.AppTitle = "Cashier";
+        AutoUpdater.Mandatory = true;
+        AutoUpdater.UpdateMode = Mode.ForcedDownload;
+        AutoUpdater.ShowSkipButton = false;
+        AutoUpdater.ShowRemindLaterButton = false;
+        AutoUpdater.ReportErrors = true;
+        AutoUpdater.ClearAppDirectory = true;
+        AutoUpdater.InstallationPath = AppContext.BaseDirectory;
+        AutoUpdater.DownloadPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Cashier",
+            "Updates");
+        Directory.CreateDirectory(AutoUpdater.DownloadPath);
+        AutoUpdater.SetOwner(owner);
+        AutoUpdater.Start(UpdateManifestUrl, typeof(App).Assembly);
+    }
 
     public static void ApplyThemePalette(bool isDarkTheme, bool initialize = false)
     {
@@ -157,23 +181,6 @@ public partial class App : System.Windows.Application
             var login = Services.GetRequiredService<LoginWindow>();
             MainWindow = login;
             login.Show();
-
-            AutoUpdater.AppTitle = "Cashier";
-            AutoUpdater.Mandatory = true;
-            AutoUpdater.UpdateMode = Mode.Forced;
-            AutoUpdater.ShowSkipButton = false;
-            AutoUpdater.ShowRemindLaterButton = false;
-            AutoUpdater.ReportErrors = false;
-            AutoUpdater.ClearAppDirectory = true;
-            AutoUpdater.InstallationPath = AppContext.BaseDirectory;
-            AutoUpdater.DownloadPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Cashier",
-                "Updates");
-            Directory.CreateDirectory(AutoUpdater.DownloadPath);
-            AutoUpdater.Start(
-                "https://raw.githubusercontent.com/jkhaled497-lgtm/CashierApp/main/version.xml",
-                typeof(App).Assembly);
         }
         catch (Exception exception)
         {

@@ -6,6 +6,8 @@ namespace Cashier.UI.ViewModels;
 
 public partial class LoginViewModel(IAuthService authService, SessionManager sessionManager) : ObservableObject
 {
+    public string CurrentVersion => App.CurrentVersion;
+
     [ObservableProperty] private string username = string.Empty;
     [ObservableProperty] private string password = string.Empty;
     [ObservableProperty] private string newPassword = string.Empty;
@@ -15,6 +17,20 @@ public partial class LoginViewModel(IAuthService authService, SessionManager ses
     [ObservableProperty] private string? message;
 
     public event EventHandler? LoggedIn;
+
+    [RelayCommand]
+    private void CheckForUpdates()
+    {
+        try
+        {
+            App.CheckForUpdates(System.Windows.Application.Current.MainWindow);
+            Message = "بدأ التحقق من التحديثات؛ سيتم تنزيل أحدث إصدار وتثبيته تلقائياً عند توفره.";
+        }
+        catch (Exception exception)
+        {
+            Message = $"تعذر بدء التحديث: {exception.Message}";
+        }
+    }
 
     [RelayCommand]
     private Task InitializeAsync() => Task.CompletedTask;

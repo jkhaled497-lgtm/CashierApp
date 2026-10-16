@@ -33,6 +33,14 @@
                              PasswordChanged="PasswordBox_OnPasswordChanged" />
                 <Button Content="تسجيل الدخول" Command="{Binding LoginCommand}"
                         Background="{DynamicResource AccentBrush}" Foreground="White" Margin="3,14,3,0" />
+                <TextBlock Text="{Binding CurrentVersion, StringFormat=الإصدار الحالي: {0}}"
+                           Foreground="{DynamicResource SubtleBrush}" Margin="4,10,4,0" />
+                <TextBlock Margin="4,2,4,0">
+                    <Hyperlink Command="{Binding CheckForUpdatesCommand}"
+                               Foreground="{DynamicResource AccentBrush}">
+                        التحقق من التحديثات وتثبيت أحدث إصدار
+                    </Hyperlink>
+                </TextBlock>
                 <StackPanel Visibility="{Binding IsPasswordChangeRequired, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <TextBlock Text="تغيير كلمة المرور الافتراضية" FontSize="18" FontWeight="SemiBold" Margin="3,18,3,4" Foreground="{DynamicResource PrimaryTextBrush}" />
                     <TextBlock Text="كلمة مرور جديدة (12 حرفاً على الأقل)" Margin="3,4,3,0" Foreground="{DynamicResource PrimaryTextBrush}" />
