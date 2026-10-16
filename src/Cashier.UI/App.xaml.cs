@@ -4,6 +4,7 @@ using Cashier.Infrastructure;
 using Cashier.UI.Services;
 using Cashier.UI.ViewModels;
 using Cashier.UI.Views;
+using AutoUpdaterDotNET;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -88,14 +89,26 @@ public partial class App : System.Windows.Application
         {
             host = Host.CreateDefaultBuilder()
                 .ConfigureAppConfiguration((_, configuration) =>
-                    configuration.AddJsonFile(
-                        Path.Combine(AppContext.BaseDirectory, "appsettings.json"),
-                        optional: false,
-                        reloadOnChange: false))
+                {
+                    configuration
+                        .AddJsonFile(
+                            Path.Combine(AppContext.BaseDirectory, "appsettings.json"),
+                            optional: true,
+                            reloadOnChange: false)
+                        .AddJsonFile(
+                            Path.Combine(
+                                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                                "Cashier",
+                                "appsettings.json"),
+                            optional: true,
+                            reloadOnChange: false)
+                        .AddEnvironmentVariables();
+                })
                 .ConfigureServices((context, services) =>
                 {
                     var connectionString = context.Configuration.GetConnectionString("Cashier")
-                        ?? throw new InvalidOperationException("سلسلة اتصال قاعدة بيانات Cashier غير موجودة في appsettings.json.");
+                        ?? throw new InvalidOperationException(
+                            "سلسلة اتصال قاعدة بيانات Cashier غير موجودة. أضفها في C:\\ProgramData\\Cashier\\appsettings.json أو في متغير البيئة ConnectionStrings__Cashier.");
                     services.AddCashierInfrastructure(connectionString);
                     services.AddSingleton<SessionManager>();
                     services.AddSingleton<IPrintService, ThermalReceiptPrintService>();
@@ -144,6 +157,23 @@ public partial class App : System.Windows.Application
             var login = Services.GetRequiredService<LoginWindow>();
             MainWindow = login;
             login.Show();
+
+            AutoUpdater.AppTitle = "Cashier";
+            AutoUpdater.Mandatory = true;
+            AutoUpdater.UpdateMode = Mode.Forced;
+            AutoUpdater.ShowSkipButton = false;
+            AutoUpdater.ShowRemindLaterButton = false;
+            AutoUpdater.ReportErrors = false;
+            AutoUpdater.ClearAppDirectory = true;
+            AutoUpdater.InstallationPath = AppContext.BaseDirectory;
+            AutoUpdater.DownloadPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Cashier",
+                "Updates");
+            Directory.CreateDirectory(AutoUpdater.DownloadPath);
+            AutoUpdater.Start(
+                "https://raw.githubusercontent.com/jkhaled497-lgtm/CashierApp/main/version.xml",
+                typeof(App).Assembly);
         }
         catch (Exception exception)
         {
