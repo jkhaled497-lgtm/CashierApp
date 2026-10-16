@@ -1,0 +1,39 @@
+<UserControl x:Class="Cashier.UI.Views.UsersView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:views="clr-namespace:Cashier.UI.Views">
+    <Grid Margin="20">
+        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+        <Border Padding="16" Margin="0,0,0,12" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="12">
+            <DockPanel>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                    <Button Content="إضافة مستخدم" Command="{Binding CreateCommand}" Background="{DynamicResource AccentBrush}" Foreground="White"
+                            IsEnabled="{Binding CanManageUsers}" />
+                    <Button Content="تعديل المحدد" Command="{Binding EditCommand}"
+                            IsEnabled="{Binding CanManageUsers}" />
+                    <Button Content="تفعيل / تعطيل" Command="{Binding ToggleActiveCommand}" IsEnabled="{Binding CanManageUsers}" />
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock Text="إدارة المستخدمين والصلاحيات" FontSize="22" FontWeight="SemiBold" />
+                    <TextBlock Text="أنشئ الحسابات وحدد الدور واربط الحساب بالموظف المناسب." Foreground="{StaticResource SubtleBrush}" Margin="0,3,0,0" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+        <DataGrid Grid.Row="1" ItemsSource="{Binding Items}" SelectedItem="{Binding Selected}"
+                  AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="اسم المستخدم" Binding="{Binding Username}" Width="*" />
+                <DataGridTextColumn Header="الصلاحية" Binding="{Binding Role, Converter={StaticResource ArabicEnumConverter}}" Width="160" />
+                <DataGridCheckBoxColumn Header="مفعل" Binding="{Binding IsActive}" Width="100" />
+                <DataGridTextColumn Header="آخر تسجيل دخول" Binding="{Binding LastLoginAt, Converter={StaticResource EgyptDateTimeConverter}}" Width="220" />
+            </DataGrid.Columns>
+        </DataGrid>
+        <views:PaginationBar Grid.Row="2" Margin="0,8,0,0"
+                            Summary="{Binding Pager.Summary}" HasPreviousPage="{Binding Pager.HasPreviousPage}"
+                            HasNextPage="{Binding Pager.HasNextPage}" RefreshCommand="{Binding Pager.RefreshCommand}"
+                            PreviousCommand="{Binding Pager.PreviousPageCommand}" NextCommand="{Binding Pager.NextPageCommand}" />
+        <Border Grid.Row="3" Margin="0,8,0,0" Padding="10" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="8">
+            <TextBlock Text="{Binding Status}" Foreground="{DynamicResource AlertBrush}" />
+        </Border>
+    </Grid>
+</UserControl>

@@ -1,0 +1,44 @@
+<UserControl x:Class="Cashier.UI.Views.InventoryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:views="clr-namespace:Cashier.UI.Views">
+    <Grid Margin="22">
+        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+        <Border Padding="16" Margin="0,0,0,12" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="12">
+            <DockPanel>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+                    <ComboBox Width="200" ItemsSource="{Binding Products}" SelectedItem="{Binding SelectedProduct}" DisplayMemberPath="Name" />
+                    <ComboBox Width="150" ItemsSource="{Binding Types}" SelectedItem="{Binding SelectedType}">
+                        <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource ArabicEnumConverter}}" /></DataTemplate></ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <TextBox Width="95" Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" ToolTip="الكمية" />
+                    <TextBox Width="200" Text="{Binding Reason, UpdateSourceTrigger=PropertyChanged}" ToolTip="السبب أو الملاحظات" />
+                    <Button Content="تسجيل الحركة" Command="{Binding AdjustCommand}" Background="{DynamicResource AccentBrush}" Foreground="White"
+                            IsEnabled="{Binding CanAdjust}" />
+                </StackPanel>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="إدارة المخزون" FontSize="22" FontWeight="SemiBold" />
+                    <TextBlock Text="تسجيل ومراجعة حركات المخزون مع سبب الحركة." Foreground="{StaticResource SubtleBrush}" Margin="0,3,0,0" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+        <DataGrid Grid.Row="1" ItemsSource="{Binding Adjustments}" AutoGenerateColumns="False"
+                  CanUserAddRows="False" IsReadOnly="True">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="التاريخ" Binding="{Binding CreatedAt, Converter={StaticResource EgyptDateTimeConverter}}" Width="200" />
+                <DataGridTextColumn Header="المنتج" Binding="{Binding Product.Name}" Width="*" />
+                <DataGridTextColumn Header="نوع الحركة" Binding="{Binding Type, Converter={StaticResource ArabicEnumConverter}}" Width="120" />
+                <DataGridTextColumn Header="الكمية" Binding="{Binding Quantity}" Width="110" />
+                <DataGridTextColumn Header="الموظف" Binding="{Binding Employee.FullName}" Width="180" />
+                <DataGridTextColumn Header="السبب" Binding="{Binding Reason}" Width="*" />
+            </DataGrid.Columns>
+        </DataGrid>
+        <views:PaginationBar Grid.Row="2" Margin="0,8,0,0"
+                            Summary="{Binding Pager.Summary}" HasPreviousPage="{Binding Pager.HasPreviousPage}"
+                            HasNextPage="{Binding Pager.HasNextPage}" RefreshCommand="{Binding Pager.RefreshCommand}"
+                            PreviousCommand="{Binding Pager.PreviousPageCommand}" NextCommand="{Binding Pager.NextPageCommand}" />
+        <Border Grid.Row="3" Margin="0,8,0,0" Padding="10" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="8">
+            <TextBlock Text="{Binding Status}" Foreground="{DynamicResource AlertBrush}" />
+        </Border>
+    </Grid>
+</UserControl>

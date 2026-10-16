@@ -1,0 +1,127 @@
+<UserControl x:Class="Cashier.UI.Views.SuppliersView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:views="clr-namespace:Cashier.UI.Views">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Border Padding="18" Margin="0,0,0,12" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="14">
+            <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="إدارة الموردين" FontSize="24" FontWeight="SemiBold" />
+                    <TextBlock Text="بيانات الموردين والمبالغ المستحقة وكشوف الحسابات" Foreground="{StaticResource SubtleBrush}" Margin="0,3,0,8" />
+                    <StackPanel Orientation="Horizontal">
+                        <TextBox Width="310" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" ToolTip="ابحث باسم المورد أو الهاتف أو البريد" />
+                        <Button Content="بحث" Command="{Binding LoadCommand}" />
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="إضافة مورد" Command="{Binding NewCommand}" Background="{DynamicResource AccentBrush}" Foreground="White" />
+                    <Button Content="تعديل" Command="{Binding EditCommand}" IsEnabled="{Binding Selected, Converter={StaticResource NotNullToBooleanConverter}}" />
+                    <Button Content="حذف" Command="{Binding DeleteCommand}" IsEnabled="{Binding Selected, Converter={StaticResource NotNullToBooleanConverter}}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+        <UniformGrid Grid.Row="1" Columns="3" Margin="0,0,0,10">
+            <Border Margin="0,0,6,0" Padding="14" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="12">
+                <StackPanel><TextBlock Text="إجمالي الموردين" Foreground="{StaticResource SubtleBrush}" /><TextBlock Text="{Binding SupplierCount, StringFormat={}{0:N0}}" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" /></StackPanel>
+            </Border>
+            <Border Margin="6,0" Padding="14" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="12">
+                <StackPanel><TextBlock Text="موردون لهم مستحقات (الصفحة)" Foreground="{StaticResource SubtleBrush}" /><TextBlock Text="{Binding SuppliersWithBalanceCount, StringFormat={}{0:N0}}" FontSize="22" FontWeight="Bold" /></StackPanel>
+            </Border>
+            <Border Margin="6,0,0,0" Padding="14" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="12">
+                <StackPanel><TextBlock Text="إجمالي مستحقات الصفحة" Foreground="{StaticResource SubtleBrush}" /><TextBlock Text="{Binding CurrentPageBalanceTotal, StringFormat={}{0:N2}}" FontSize="22" FontWeight="Bold" /></StackPanel>
+            </Border>
+        </UniformGrid>
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" MinWidth="470" />
+                <ColumnDefinition Width="6" />
+                <ColumnDefinition Width="0.8*" MinWidth="250" />
+            </Grid.ColumnDefinitions>
+            <Border Grid.Column="2" Margin="8,0,0,0" Padding="10" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="12">
+                <Grid>
+                    <Grid.RowDefinitions><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                    <DataGrid Grid.Row="0" ItemsSource="{Binding Items}" SelectedItem="{Binding Selected}"
+                              AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
+                              MinHeight="0" RowHeight="52" VerticalScrollBarVisibility="Auto">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="اسم المورد" Binding="{Binding Name}" Width="*" />
+                            <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone}" Width="125" />
+                            <DataGridTextColumn Header="المستحق" Binding="{Binding CurrentBalance, StringFormat={}{0:N2}}" Width="110" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <views:PaginationBar Grid.Row="1" Margin="0,7,0,0"
+                                         Summary="{Binding Pager.Summary}" HasPreviousPage="{Binding Pager.HasPreviousPage}"
+                                         HasNextPage="{Binding Pager.HasNextPage}" RefreshCommand="{Binding Pager.RefreshCommand}"
+                                         PreviousCommand="{Binding Pager.PreviousPageCommand}" NextCommand="{Binding Pager.NextPageCommand}" />
+                </Grid>
+            </Border>
+            <Border Grid.Column="0" Margin="0,0,8,0" Padding="14" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="{Binding Selected.Name, TargetNullValue=اختر مورداً لعرض التفاصيل}" FontSize="19" FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding Selected.Phone, StringFormat=الهاتف: {0}}" Foreground="{StaticResource SubtleBrush}" Margin="0,4,0,0" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" HorizontalAlignment="Left">
+                            <TextBlock Text="المبلغ المستحق للمورد" Foreground="{StaticResource SubtleBrush}" />
+                            <TextBlock Text="{Binding Selected.CurrentBalance, StringFormat={}{0:N2}}" FontSize="19" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" />
+                        </StackPanel>
+                    </Grid>
+                    <Border Grid.Row="1" Margin="0,8,0,4" Padding="10" Background="{DynamicResource SurfaceBrush}"
+                            CornerRadius="10" Visibility="{Binding HasSelectedSupplier, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel>
+                            <TextBlock Text="تسجيل دفعة من إجمالي مستحق المورد" FontWeight="SemiBold" Margin="2,0,2,4" />
+                            <WrapPanel>
+                                <ComboBox Width="130" ItemsSource="{Binding PaymentMethods}" SelectedItem="{Binding BalancePaymentMethod}">
+                                    <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource ArabicEnumConverter}}" /></DataTemplate></ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <TextBox Width="135" Text="{Binding BalanceAmount, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="قيمة الدفعة من إجمالي المستحق" />
+                                <TextBox Width="190" Text="{Binding BalanceNote, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="ملاحظات (اختياري)" />
+                                <Button Content="تسجيل الدفعة" Command="{Binding RegisterBalanceEntryCommand}"
+                                        Background="{DynamicResource AccentBrush}" Foreground="White" />
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Row="2" Margin="0,8,0,0" Padding="18"
+                            Background="{DynamicResource SurfaceBrush}" CornerRadius="12">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <TextBlock Text="اختر بيانات المورد التي تريد عرضها"
+                                       Foreground="{DynamicResource SubtleBrush}"
+                                       HorizontalAlignment="Center" Margin="0,0,0,12" />
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button Content="فتح كشف حساب المورد" Tag="Ledger"
+                                        Click="OpenSupplierRecords_OnClick"
+                                        IsEnabled="{Binding HasSelectedSupplier}"
+                                        Background="{DynamicResource AccentBrush}" Foreground="White" />
+                                <Button Content="عرض فواتير المورد" Tag="Invoices"
+                                        Click="OpenSupplierRecords_OnClick"
+                                        IsEnabled="{Binding HasSelectedSupplier}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+            <GridSplitter Grid.Column="1" Width="6" HorizontalAlignment="Center" VerticalAlignment="Stretch"
+                          Background="{DynamicResource PanelBorderBrush}" ShowsPreview="True"
+                          ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" />
+        </Grid>
+        <Border Grid.Row="3" Margin="0,8,0,0" Padding="10" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="10">
+            <TextBlock Text="{Binding Status}" Foreground="{DynamicResource AlertBrush}" />
+        </Border>
+    </Grid>
+</UserControl>

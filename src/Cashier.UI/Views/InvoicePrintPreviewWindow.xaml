@@ -1,0 +1,47 @@
+<Window x:Class="Cashier.UI.Views.InvoicePrintPreviewWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xml:lang="ar-EG"
+        Title="معاينة وطباعة الفاتورة" Width="1000" Height="780"
+        MinWidth="720" MinHeight="520" FlowDirection="RightToLeft"
+        WindowStartupLocation="CenterOwner" Background="{DynamicResource WindowBackgroundBrush}">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <DockPanel Grid.Row="0" Margin="0,0,0,12">
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                <Button Content="إغلاق" Click="CloseWindow_OnClick" />
+                <Button Content="اختيار الطابعة والطباعة" Click="Print_OnClick"
+                        Background="{DynamicResource AccentBrush}" Foreground="White" />
+            </StackPanel>
+            <DockPanel LastChildFill="False">
+                <StackPanel x:Name="PaperFormatPanel" Orientation="Horizontal" DockPanel.Dock="Left"
+                            VerticalAlignment="Center" Visibility="Collapsed">
+                    <TextBlock Text="تنسيق الطباعة" VerticalAlignment="Center" Margin="8,0" />
+                    <ComboBox x:Name="PaperFormatComboBox" Width="150" SelectedIndex="1"
+                              SelectionChanged="PaperFormatComboBox_OnSelectionChanged">
+                        <ComboBoxItem Content="ورق A4" />
+                        <ComboBoxItem Content="إيصال 80 مم" />
+                    </ComboBox>
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock Text="معاينة الفاتورة" FontSize="22" FontWeight="SemiBold"
+                               VerticalAlignment="Center" />
+                    <TextBlock x:Name="PaperFormatHint"
+                               Text="لطباعة إيصال 80 مم، اختر مقاس الورق نفسه من إعدادات الطابعة."
+                               FontSize="11" Foreground="{DynamicResource SubtleBrush}"
+                               Visibility="Collapsed" />
+                </StackPanel>
+            </DockPanel>
+        </DockPanel>
+        <Border Grid.Row="1" Background="#FFE5E7EB" CornerRadius="10" Padding="8">
+            <FlowDocumentScrollViewer x:Name="InvoiceDocumentViewer"
+                                      IsToolBarVisible="True"
+                                      VerticalScrollBarVisibility="Auto"
+                                      Zoom="100"
+                                      Background="#FFE5E7EB" />
+        </Border>
+    </Grid>
+</Window>

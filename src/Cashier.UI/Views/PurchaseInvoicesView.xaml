@@ -1,0 +1,127 @@
+<UserControl x:Class="Cashier.UI.Views.PurchaseInvoicesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="22">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Padding="16" Margin="0,0,0,12"
+                Background="{DynamicResource CardBackgroundBrush}" CornerRadius="14">
+            <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="فواتير الشراء" FontSize="24" FontWeight="SemiBold" />
+                    <TextBlock Text="اختر المورد لعرض فواتيره وتفاصيل المشتريات والمدفوعات."
+                               Foreground="{DynamicResource SubtleBrush}" Margin="0,4,0,10" />
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="المورد" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <ComboBox Width="350" ItemsSource="{Binding Suppliers}" SelectedItem="{Binding SelectedSupplier}"
+                                  DisplayMemberPath="Name" Tag="اختر المورد" />
+                    </StackPanel>
+                </StackPanel>
+                <Button Grid.Column="1" Content="طباعة الفاتورة" Command="{Binding PrintCommand}"
+                        IsEnabled="{Binding HasResult}" VerticalAlignment="Center" Padding="18,11"
+                        Background="{DynamicResource AccentBrush}" Foreground="White" />
+            </Grid>
+        </Border>
+
+        <UniformGrid Grid.Row="1" Columns="5" Margin="0,0,0,12">
+            <Border Margin="0,0,5,0" Padding="12" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="10">
+                <StackPanel><TextBlock Text="عدد الفواتير" Foreground="{DynamicResource SubtleBrush}" /><TextBlock Text="{Binding Statistics.InvoiceCount, StringFormat={}{0:N0}}" FontSize="19" FontWeight="Bold" /></StackPanel>
+            </Border>
+            <Border Margin="5,0" Padding="12" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="10">
+                <StackPanel><TextBlock Text="إجمالي المشتريات" Foreground="{DynamicResource SubtleBrush}" /><TextBlock Text="{Binding Statistics.TotalPurchases, StringFormat={}{0:N2}}" FontSize="19" FontWeight="Bold" /></StackPanel>
+            </Border>
+            <Border Margin="5,0" Padding="12" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="10">
+                <StackPanel><TextBlock Text="إجمالي المدفوع" Foreground="{DynamicResource SubtleBrush}" /><TextBlock Text="{Binding Statistics.TotalPaid, StringFormat={}{0:N2}}" FontSize="19" FontWeight="Bold" /></StackPanel>
+            </Border>
+            <Border Margin="5,0" Padding="12" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="10">
+                <StackPanel><TextBlock Text="متبقي الفواتير" Foreground="{DynamicResource SubtleBrush}" /><TextBlock Text="{Binding Statistics.OutstandingAmount, StringFormat={}{0:N2}}" FontSize="19" FontWeight="Bold" /></StackPanel>
+            </Border>
+            <Border Margin="5,0,0,0" Padding="12" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="10">
+                <StackPanel><TextBlock Text="رصيد المورد الحالي" Foreground="{DynamicResource SubtleBrush}" /><TextBlock Text="{Binding Statistics.SupplierBalance, StringFormat={}{0:N2}}" FontSize="19" FontWeight="Bold" /></StackPanel>
+            </Border>
+        </UniformGrid>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="1.05*" /><ColumnDefinition Width="1.25*" /></Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Margin="0,0,8,0" Padding="10"
+                    Background="{DynamicResource CardBackgroundBrush}" CornerRadius="12">
+                <Grid>
+                    <Grid.RowDefinitions><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                    <DataGrid Grid.Row="0" ItemsSource="{Binding InvoiceRows}"
+                              SelectedItem="{Binding SelectedInvoice}" AutoGenerateColumns="False"
+                              CanUserAddRows="False" IsReadOnly="True" SelectionMode="Single" MinHeight="0">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="رقم الفاتورة" Binding="{Binding InvoiceNumber}" Width="115" />
+                            <DataGridTextColumn Header="التاريخ" Binding="{Binding CreatedAt, Converter={StaticResource EgyptDateTimeConverter}}" Width="180" />
+                            <DataGridTextColumn Header="الإجمالي" Binding="{Binding GrandTotal, StringFormat={}{0:N2}}" Width="105" />
+                            <DataGridTextColumn Header="المدفوع" Binding="{Binding TotalPaid, StringFormat={}{0:N2}}" Width="105" />
+                            <DataGridTextColumn Header="الحالة" Binding="{Binding Status, Converter={StaticResource ArabicEnumConverter}}" Width="95" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <DockPanel Grid.Row="1" Margin="2,8,2,0">
+                        <TextBlock Text="{Binding Pager.Summary}" VerticalAlignment="Center" />
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                            <Button Content="السابق" Command="{Binding Pager.PreviousPageCommand}" />
+                            <Button Content="التالي" Command="{Binding Pager.NextPageCommand}" />
+                        </StackPanel>
+                    </DockPanel>
+                </Grid>
+            </Border>
+            <Border Grid.Column="1" Margin="8,0,0,0" Padding="16"
+                    Background="{DynamicResource CardBackgroundBrush}" CornerRadius="12">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="تفاصيل فاتورة الشراء" FontSize="19" FontWeight="SemiBold" Margin="0,0,0,12" />
+                        <TextBlock Text="اختر فاتورة من القائمة لعرض تفاصيل الأصناف والمدفوعات."
+                                   Foreground="{DynamicResource SubtleBrush}"
+                                   Visibility="{Binding HasResult, Converter={StaticResource InverseBooleanToVisibilityConverter}}" />
+                        <StackPanel Visibility="{Binding HasResult, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <UniformGrid Columns="2" Margin="0,0,0,10">
+                                <StackPanel Margin="5"><TextBlock Text="رقم الفاتورة" Foreground="{DynamicResource SubtleBrush}" /><TextBlock Text="{Binding Result.InvoiceNumber}" FontWeight="Bold" /></StackPanel>
+                                <StackPanel Margin="5">
+                                    <TextBlock Text="التاريخ" Foreground="{DynamicResource SubtleBrush}" />
+                                    <TextBlock Text="{Binding Result.CreatedAt, Converter={StaticResource EgyptDateTimeConverter}}" />
+                                </StackPanel>
+                                <StackPanel Margin="5"><TextBlock Text="المورد" Foreground="{DynamicResource SubtleBrush}" /><TextBlock Text="{Binding Result.Supplier.Name}" /></StackPanel>
+                                <StackPanel Margin="5"><TextBlock Text="الحالة" Foreground="{DynamicResource SubtleBrush}" /><TextBlock Text="{Binding Result.Status, Converter={StaticResource ArabicEnumConverter}}" /></StackPanel>
+                            </UniformGrid>
+                            <Button Content="عرض منتجات الفاتورة" Click="ShowInvoiceItems_OnClick"
+                                    HorizontalAlignment="Right" Margin="5,8"
+                                    IsEnabled="{Binding HasResult}"
+                                    Background="{DynamicResource AccentBrush}" Foreground="White" />
+                            <TextBlock Text="المدفوعات" FontSize="16" FontWeight="SemiBold" Margin="2,12,2,6" />
+                            <ItemsControl ItemsSource="{Binding Result.Payments}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Margin="2,3" Padding="9" Background="{DynamicResource SurfaceBrush}" CornerRadius="7">
+                                            <DockPanel>
+                                                <TextBlock Text="{Binding CreatedAt, Converter={StaticResource EgyptDateTimeConverter}}"
+                                                           Foreground="{DynamicResource SubtleBrush}" />
+                                                <TextBlock Text="{Binding Method, Converter={StaticResource ArabicEnumConverter}}" Margin="8,0" />
+                                                <TextBlock Text="{Binding Amount, StringFormat={}{0:N2} ج.م}" DockPanel.Dock="Left" FontWeight="SemiBold" />
+                                            </DockPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Separator Margin="0,10" />
+                            <UniformGrid Columns="2">
+                                <StackPanel Margin="5"><TextBlock Text="إجمالي الأصناف" Foreground="{DynamicResource SubtleBrush}" /><TextBlock Text="{Binding Result.Subtotal, StringFormat={}{0:N2}}" /></StackPanel>
+                                <StackPanel Margin="5"><TextBlock Text="الخصم" Foreground="{DynamicResource SubtleBrush}" /><TextBlock Text="{Binding Result.DiscountTotal, StringFormat={}{0:N2}}" /></StackPanel>
+                                <StackPanel Margin="5"><TextBlock Text="الإجمالي المستحق" Foreground="{DynamicResource SubtleBrush}" /><TextBlock Text="{Binding Result.GrandTotal, StringFormat={}{0:N2}}" FontWeight="Bold" /></StackPanel>
+                                <StackPanel Margin="5"><TextBlock Text="إجمالي المدفوع" Foreground="{DynamicResource SubtleBrush}" /><TextBlock Text="{Binding Result.TotalPaid, StringFormat={}{0:N2}}" FontWeight="Bold" /></StackPanel>
+                            </UniformGrid>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+        <TextBlock Grid.Row="3" Text="{Binding Status}" Foreground="{DynamicResource AlertBrush}" Margin="4,8,4,0"
+                   TextWrapping="Wrap" />
+    </Grid>
+</UserControl>

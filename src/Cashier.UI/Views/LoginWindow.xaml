@@ -1,0 +1,51 @@
+<ui:FluentWindow x:Class="Cashier.UI.Views.LoginWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 xml:lang="ar-EG"
+                 Title="نظام نقاط البيع - تسجيل الدخول" Height="620" Width="960"
+                 FlowDirection="RightToLeft" WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
+    <Grid Background="{DynamicResource SurfaceBrush}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1.1*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Border Background="{DynamicResource CardBackgroundBrush}" Padding="48">
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="نظام نقاط البيع" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="20" FontWeight="SemiBold" />
+                <TextBlock Text="إدارة مبيعاتك&#10;بسهولة وأمان" Foreground="{DynamicResource PrimaryTextBrush}"
+                           FontSize="38" FontWeight="Bold" Margin="0,28,0,12" TextWrapping="Wrap" />
+                <TextBlock Text="منصة متكاملة لإدارة المتجر والمخزون والفواتير."
+                           Foreground="{DynamicResource SubtleBrush}" FontSize="16" TextWrapping="Wrap" />
+            </StackPanel>
+        </Border>
+        <Border Grid.Column="1" Margin="32,38" Padding="28" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="18">
+            <StackPanel Width="340" VerticalAlignment="Center">
+                <Border Width="48" Height="48" CornerRadius="14" Background="{DynamicResource AccentBrush}" HorizontalAlignment="Right" Margin="0,0,0,18">
+                    <TextBlock Text="م" Foreground="White" FontSize="25" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <TextBlock Text="مرحباً بك" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,8" Foreground="{DynamicResource PrimaryTextBrush}" />
+                <TextBlock Text="سجل الدخول للمتابعة." Foreground="{DynamicResource SubtleBrush}" Margin="0,0,0,24" />
+                <TextBlock Text="اسم المستخدم" Margin="3,6,3,0" Foreground="{DynamicResource PrimaryTextBrush}" />
+                <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Text="كلمة المرور" Margin="3,6,3,0" Foreground="{DynamicResource PrimaryTextBrush}" />
+                <PasswordBox x:Name="PasswordBox" Margin="3" Padding="10,8" MinHeight="36"
+                             PasswordChanged="PasswordBox_OnPasswordChanged" />
+                <Button Content="تسجيل الدخول" Command="{Binding LoginCommand}"
+                        Background="{DynamicResource AccentBrush}" Foreground="White" Margin="3,14,3,0" />
+                <StackPanel Visibility="{Binding IsPasswordChangeRequired, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock Text="تغيير كلمة المرور الافتراضية" FontSize="18" FontWeight="SemiBold" Margin="3,18,3,4" Foreground="{DynamicResource PrimaryTextBrush}" />
+                    <TextBlock Text="كلمة مرور جديدة (12 حرفاً على الأقل)" Margin="3,4,3,0" Foreground="{DynamicResource PrimaryTextBrush}" />
+                    <PasswordBox x:Name="NewPasswordBox" Margin="3" Padding="10,8" MinHeight="36"
+                                 PasswordChanged="NewPasswordBox_OnPasswordChanged" />
+                    <TextBlock Text="تأكيد كلمة المرور الجديدة" Margin="3,4,3,0" Foreground="{DynamicResource PrimaryTextBrush}" />
+                    <PasswordBox x:Name="ConfirmPasswordBox" Margin="3" Padding="10,8" MinHeight="36"
+                                 PasswordChanged="ConfirmPasswordBox_OnPasswordChanged" />
+                    <Button Content="حفظ كلمة المرور والمتابعة" Command="{Binding ChangePasswordCommand}"
+                            Background="{DynamicResource AccentBrush}" Foreground="White" Margin="3,10,3,0" />
+                </StackPanel>
+                <TextBlock Text="{Binding Message}" Foreground="{DynamicResource AlertBrush}" TextWrapping="Wrap" Margin="3,12,3,0" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</ui:FluentWindow>

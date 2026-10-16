@@ -1,0 +1,159 @@
+<ui:FluentWindow x:Class="Cashier.UI.Views.EditorDialogWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 xml:lang="ar-EG"
+                 xmlns:controls="clr-namespace:Cashier.UI.Controls"
+                 Title="تحرير البيانات" Width="760" Height="740" MinWidth="580" MinHeight="540"
+                 FlowDirection="RightToLeft" WindowStartupLocation="CenterOwner"
+                 ResizeMode="CanResize" ExtendsContentIntoTitleBar="False">
+    <ui:FluentWindow.Resources>
+        <DataTemplate x:Key="ProductEditorTemplate">
+            <ScrollViewer VerticalScrollBarVisibility="Visible" controls:ScrollNavigation.IsEnabled="True">
+                <StackPanel Margin="26,20">
+                    <TextBlock Text="بيانات المنتج الأساسية" Style="{StaticResource EditorSectionTitle}" />
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <StackPanel Grid.Row="0" Grid.Column="0"><TextBlock Text="اسم المنتج *" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                        <StackPanel Grid.Row="0" Grid.Column="1"><TextBlock Text="الوحدة" Style="{StaticResource EditorFieldLabel}" /><ComboBox ItemsSource="{Binding DataContext.Units, RelativeSource={RelativeSource AncestorType=Window}}" SelectedItem="{Binding Unit}"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource ArabicEnumConverter}}" /></DataTemplate></ComboBox.ItemTemplate></ComboBox></StackPanel>
+                        <StackPanel Grid.Row="1" Grid.ColumnSpan="2">
+                            <TextBlock Text="الباركود (ضع المؤشر هنا ثم امسح)" Style="{StaticResource EditorFieldLabel}" />
+                            <TextBox x:Name="BarcodeInput" Text="{Binding Barcode, UpdateSourceTrigger=PropertyChanged}" PreviewKeyDown="BarcodeInput_OnPreviewKeyDown" />
+                            <Button Content="مسح الباركود" HorizontalAlignment="Left" Click="FocusBarcodeInput_Click" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="2" Grid.Column="0"><TextBlock Text="الفئة" Style="{StaticResource EditorFieldLabel}" /><ComboBox ItemsSource="{Binding DataContext.Categories, RelativeSource={RelativeSource AncestorType=Window}}" DisplayMemberPath="Name" SelectedValuePath="Id" SelectedValue="{Binding CategoryId}" /></StackPanel>
+                        <StackPanel Grid.Row="2" Grid.Column="1"><TextBlock Text="العلامة التجارية" Style="{StaticResource EditorFieldLabel}" /><ComboBox ItemsSource="{Binding DataContext.Brands, RelativeSource={RelativeSource AncestorType=Window}}" DisplayMemberPath="Name" SelectedValuePath="Id" SelectedValue="{Binding BrandId}" /></StackPanel>
+                        <StackPanel Grid.Row="3" Grid.ColumnSpan="2" Visibility="{Binding DataContext.CanManagePrices, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0"><TextBlock Text="سعر التكلفة *" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding CostPrice, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}" /></StackPanel>
+                                <StackPanel Grid.Column="1"><TextBlock Text="سعر البيع *" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding SellingPrice, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}" /></StackPanel>
+                            </Grid>
+                        </StackPanel>
+                        <StackPanel Grid.Row="4" Grid.Column="0"><TextBlock Text="الكمية بالمخزون" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding CurrentStock, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}" /></StackPanel>
+                        <StackPanel Grid.Row="4" Grid.Column="1"><TextBlock Text="حد تنبيه المخزون" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding MinStockAlert, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}" /></StackPanel>
+                        <StackPanel Grid.Row="5" Grid.ColumnSpan="2">
+                            <TextBlock Text="صورة المنتج" Style="{StaticResource EditorFieldLabel}" />
+                            <Button Click="ChooseProductImage_Click" HorizontalAlignment="Right" Padding="8" Background="{DynamicResource SurfaceBrush}">
+                                <Border Width="132" Height="132" CornerRadius="12" ClipToBounds="True">
+                                    <Grid>
+                                        <Image x:Name="ProductImagePreview" Source="{Binding ImagePath, Converter={StaticResource ProductImageSourceConverter}}" Stretch="UniformToFill" />
+                                        <Border Background="#99000000" VerticalAlignment="Bottom" Padding="5">
+                                            <TextBlock Text="اضغط لاختيار صورة" Foreground="White" HorizontalAlignment="Center" />
+                                        </Border>
+                                    </Grid>
+                                </Border>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock Text="الوصف" Style="{StaticResource EditorFieldLabel}" />
+                    <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" MinHeight="90" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                    <CheckBox Content="المنتج مفعل" IsChecked="{Binding IsActive}" Margin="6,12" />
+                </StackPanel>
+            </ScrollViewer>
+        </DataTemplate>
+        <DataTemplate x:Key="CustomerEditorTemplate">
+            <ScrollViewer VerticalScrollBarVisibility="Visible" controls:ScrollNavigation.IsEnabled="True">
+                <StackPanel Margin="26,20">
+                    <TextBlock Text="بيانات العميل" Style="{StaticResource EditorSectionTitle}" />
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                        <StackPanel Grid.Row="0" Grid.ColumnSpan="2"><TextBlock Text="اسم العميل (اختياري)" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding FullName, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="0"><TextBlock Text="رقم الهاتف" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="1"><TextBlock Text="العنوان" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Address, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                        <StackPanel Grid.Row="2" Grid.ColumnSpan="2"><TextBlock Text="ملاحظات" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                    </Grid>
+                    <CheckBox Content="العميل مفعل" IsChecked="{Binding IsActive}" Margin="6,12" />
+                </StackPanel>
+            </ScrollViewer>
+        </DataTemplate>
+        <DataTemplate x:Key="CategoryEditorTemplate">
+            <StackPanel Margin="26,20">
+                <TextBlock Text="بيانات الفئة" Style="{StaticResource EditorSectionTitle}" />
+                <TextBlock Text="اسم الفئة *" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Text="الوصف" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" MinHeight="90" AcceptsReturn="True" TextWrapping="Wrap" />
+                <TextBlock Text="لون الفئة (HEX)" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding ColorHex, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Text="رمز الأيقونة" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Icon, UpdateSourceTrigger=PropertyChanged}" />
+                <CheckBox Content="الفئة مفعلة" IsChecked="{Binding IsActive}" Margin="6,12" />
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="SupplierEditorTemplate">
+            <ScrollViewer VerticalScrollBarVisibility="Visible" controls:ScrollNavigation.IsEnabled="True">
+                <StackPanel Margin="26,20">
+                    <TextBlock Text="بيانات المورد" Style="{StaticResource EditorSectionTitle}" />
+                    <TextBlock Text="اسم المورد *" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Supplier.Name, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBlock Text="رقم الهاتف" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Supplier.Phone, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBlock Text="البريد الإلكتروني" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Supplier.Email, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBlock Text="العنوان" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Supplier.Address, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBlock Text="الرقم الضريبي" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Supplier.TaxNumber, UpdateSourceTrigger=PropertyChanged}" />
+                    <StackPanel Visibility="{Binding IsNew, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock Text="المبلغ المستحق عند الإضافة" Style="{StaticResource EditorFieldLabel}" />
+                        <TextBox Text="{Binding OpeningBalance, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}" />
+                    </StackPanel>
+                    <TextBlock Text="ملاحظات" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Supplier.Notes, UpdateSourceTrigger=PropertyChanged}" MinHeight="90" AcceptsReturn="True" TextWrapping="Wrap" />
+                </StackPanel>
+            </ScrollViewer>
+        </DataTemplate>
+        <DataTemplate x:Key="BrandEditorTemplate">
+            <StackPanel Margin="26,20">
+                <TextBlock Text="بيانات العلامة التجارية" Style="{StaticResource EditorSectionTitle}" />
+                <TextBlock Text="اسم العلامة *" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Text="الوصف" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" MinHeight="90" AcceptsReturn="True" TextWrapping="Wrap" />
+                <TextBlock Text="مسار الشعار" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding LogoPath, UpdateSourceTrigger=PropertyChanged}" />
+                <CheckBox Content="العلامة التجارية مفعلة" IsChecked="{Binding IsActive}" Margin="6,12" />
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="EmployeeEditorTemplate">
+            <ScrollViewer VerticalScrollBarVisibility="Visible" controls:ScrollNavigation.IsEnabled="True">
+                <StackPanel Margin="26,20">
+                    <TextBlock Text="البيانات الوظيفية والشخصية" Style="{StaticResource EditorSectionTitle}" />
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                        <StackPanel Grid.Row="0" Grid.ColumnSpan="2"><TextBlock Text="الاسم الكامل *" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding FullName, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="0"><TextBlock Text="رقم الهوية" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding NationalId, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="1"><TextBlock Text="المسمى الوظيفي" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding JobTitle, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                        <StackPanel Grid.Row="2" Grid.Column="0"><TextBlock Text="الهاتف" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                        <StackPanel Grid.Row="2" Grid.Column="1"><TextBlock Text="البريد الإلكتروني" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                        <StackPanel Grid.Row="3" Grid.ColumnSpan="2"><TextBlock Text="العنوان" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Address, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                        <StackPanel Grid.Row="4" Grid.Column="0"><TextBlock Text="تاريخ التوظيف" Style="{StaticResource EditorFieldLabel}" /><DatePicker SelectedDate="{Binding HireDate, Converter={StaticResource DateOnlyToDateTimeConverter}}" /></StackPanel>
+                        <StackPanel Grid.Row="4" Grid.Column="1"><TextBlock Text="الراتب الأساسي" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding BasicSalary, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}" /></StackPanel>
+                    </Grid>
+                    <CheckBox Content="الموظف نشط" IsChecked="{Binding IsActive}" Margin="6,12" />
+                </StackPanel>
+            </ScrollViewer>
+        </DataTemplate>
+        <DataTemplate x:Key="UserEditorTemplate">
+            <StackPanel Margin="26,20">
+                <TextBlock Text="بيانات حساب المستخدم" Style="{StaticResource EditorSectionTitle}" />
+                <TextBlock Text="اسم المستخدم *" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Text="كلمة المرور الجديدة (12 حرفاً على الأقل للحساب الجديد)" Style="{StaticResource EditorFieldLabel}" />
+                <PasswordBox PasswordChanged="PasswordBox_OnPasswordChanged" Tag="{Binding}" />
+                <TextBlock Text="الصلاحية" Style="{StaticResource EditorFieldLabel}" />
+                <ComboBox ItemsSource="{Binding Roles}" SelectedItem="{Binding Role}"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource ArabicEnumConverter}}" /></DataTemplate></ComboBox.ItemTemplate></ComboBox>
+                <TextBlock Text="ربط بسجل موظف (اختياري)" Style="{StaticResource EditorFieldLabel}" />
+                <ComboBox ItemsSource="{Binding DataContext.Employees, RelativeSource={RelativeSource AncestorType=Window}}" SelectedItem="{Binding Employee}" DisplayMemberPath="FullName" SelectedIndex="-1" />
+                <CheckBox Content="الحساب مفعل" IsChecked="{Binding IsActive}" Margin="6,12" />
+            </StackPanel>
+        </DataTemplate>
+    </ui:FluentWindow.Resources>
+    <Grid Background="{DynamicResource WindowBackgroundBrush}">
+        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+        <Border Background="{DynamicResource AccentBrush}" Padding="22,18">
+            <TextBlock Text="{Binding Title}" Foreground="White" FontSize="22" FontWeight="SemiBold" />
+        </Border>
+        <ContentControl x:Name="EditorContent" Grid.Row="1" Content="{Binding Entity}" />
+        <Border Grid.Row="2" Background="{DynamicResource CardBackgroundBrush}" Padding="14,10">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                <Button Content="حفظ البيانات" IsDefault="True" Click="Save_Click" Background="{DynamicResource AccentBrush}" Foreground="White" MinWidth="120" />
+                <Button Content="إلغاء" IsCancel="True" MinWidth="100" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</ui:FluentWindow>

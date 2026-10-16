@@ -1,0 +1,60 @@
+<UserControl x:Class="Cashier.UI.Views.MasterDataView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:views="clr-namespace:Cashier.UI.Views">
+    <Grid Margin="22">
+        <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+        <Border Grid.Column="0" Margin="0,0,8,12" Padding="14" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="10">
+            <DockPanel>
+                <Button Content="إضافة فئة" Command="{Binding NewCategoryCommand}" DockPanel.Dock="Left" Background="{DynamicResource AccentBrush}" Foreground="White" />
+                <TextBlock Text="الفئات" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center" />
+            </DockPanel>
+        </Border>
+        <Border Grid.Column="1" Margin="8,0,0,12" Padding="14" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="10">
+            <DockPanel>
+                <Button Content="إضافة علامة" Command="{Binding NewBrandCommand}" DockPanel.Dock="Left" Background="{DynamicResource AccentBrush}" Foreground="White" />
+                <TextBlock Text="العلامات التجارية" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center" />
+            </DockPanel>
+        </Border>
+        <DataGrid Grid.Row="1" ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}"
+                  AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" Margin="0,0,8,10">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="الرمز" Binding="{Binding Code}" Width="110" />
+                <DataGridTextColumn Header="الاسم" Binding="{Binding Name}" Width="*" />
+                <DataGridTextColumn Header="الوصف" Binding="{Binding Description}" Width="*" />
+                <DataGridTextColumn Header="اللون" Binding="{Binding ColorHex}" Width="90" />
+                <DataGridCheckBoxColumn Header="مفعل" Binding="{Binding IsActive}" Width="70" />
+            </DataGrid.Columns>
+        </DataGrid>
+        <DataGrid Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Brands}" SelectedItem="{Binding SelectedBrand}"
+                  AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" Margin="8,0,0,10">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="الاسم" Binding="{Binding Name}" Width="*" />
+                <DataGridTextColumn Header="الوصف" Binding="{Binding Description}" Width="*" />
+                <DataGridTextColumn Header="مسار الشعار" Binding="{Binding LogoPath}" Width="*" />
+                <DataGridCheckBoxColumn Header="مفعل" Binding="{Binding IsActive}" Width="70" />
+            </DataGrid.Columns>
+        </DataGrid>
+        <views:PaginationBar Grid.Row="2" Grid.Column="0" Margin="0,0,8,0"
+                            Summary="{Binding CategoryPager.Summary}" HasPreviousPage="{Binding CategoryPager.HasPreviousPage}"
+                            HasNextPage="{Binding CategoryPager.HasNextPage}" RefreshCommand="{Binding CategoryPager.RefreshCommand}"
+                            PreviousCommand="{Binding CategoryPager.PreviousPageCommand}" NextCommand="{Binding CategoryPager.NextPageCommand}" />
+        <views:PaginationBar Grid.Row="2" Grid.Column="1" Margin="8,0,0,0"
+                            Summary="{Binding BrandPager.Summary}" HasPreviousPage="{Binding BrandPager.HasPreviousPage}"
+                            HasNextPage="{Binding BrandPager.HasNextPage}" RefreshCommand="{Binding BrandPager.RefreshCommand}"
+                            PreviousCommand="{Binding BrandPager.PreviousPageCommand}" NextCommand="{Binding BrandPager.NextPageCommand}" />
+        <Border Grid.Row="3" Grid.ColumnSpan="2" Padding="8" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="8">
+            <DockPanel>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                    <Button Content="تعديل الفئة المحددة" Command="{Binding EditCategoryCommand}" IsEnabled="{Binding SelectedCategory, Converter={StaticResource NotNullToBooleanConverter}}" />
+                    <Button Content="حذف الفئة" Command="{Binding DeactivateCategoryCommand}" IsEnabled="{Binding SelectedCategory, Converter={StaticResource NotNullToBooleanConverter}}" />
+                    <Separator Width="1" Margin="8,4" />
+                    <Button Content="تعديل العلامة المحددة" Command="{Binding EditBrandCommand}" IsEnabled="{Binding SelectedBrand, Converter={StaticResource NotNullToBooleanConverter}}" />
+                    <Button Content="حذف العلامة" Command="{Binding DeactivateBrandCommand}" IsEnabled="{Binding SelectedBrand, Converter={StaticResource NotNullToBooleanConverter}}" />
+                </StackPanel>
+                <TextBlock Text="{Binding Status}" VerticalAlignment="Center" Margin="12,0" Foreground="{DynamicResource AlertBrush}" />
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

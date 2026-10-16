@@ -1,0 +1,123 @@
+<ui:FluentWindow x:Class="Cashier.UI.MainWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 xmlns:controls="clr-namespace:Cashier.UI.Controls"
+                 xmlns:views="clr-namespace:Cashier.UI.Views"
+                 xml:lang="ar-EG" FlowDirection="RightToLeft"
+                 Title="نظام نقاط البيع" Height="850" Width="1440" MinHeight="520" MinWidth="760"
+                 ResizeMode="CanResize" WindowState="Maximized" WindowStartupLocation="CenterScreen" Background="{DynamicResource WindowBackgroundBrush}">
+    <Window.InputBindings>
+        <KeyBinding Key="F1" Command="{Binding Cashier.SearchProductsCommand}" />
+        <KeyBinding Key="F2" Command="{Binding Cashier.FocusQuantityCommand}" />
+        <KeyBinding Key="F3" Command="{Binding Cashier.AddLineDiscountCommand}" />
+    </Window.InputBindings>
+    <DockPanel>
+        <Border DockPanel.Dock="Top" Background="{DynamicResource HeaderGradientBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="0,0,0,1" Padding="20,14">
+            <DockPanel>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Width="42" Height="42" CornerRadius="12" Background="{DynamicResource AccentGradientBrush}" Margin="0,0,12,0">
+                        <TextBlock Text="م" Foreground="White" FontSize="22" FontWeight="Bold"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="نظام نقاط البيع" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="18" FontWeight="SemiBold" />
+                        <TextBlock Text="إدارة المبيعات والمخزون" Foreground="{DynamicResource SubtleBrush}" FontSize="11" />
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
+                    <Button Content="✕" ToolTip="إغلاق البرنامج" AutomationProperties.Name="إغلاق البرنامج"
+                            Click="CloseApplication_OnClick" Width="38" Height="38" Padding="0"
+                            Margin="4,3,3,3" FontSize="16" FontWeight="Bold"
+                            Background="#FF8F3542" Foreground="White" />
+                    <Border Background="{DynamicResource CardBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1" CornerRadius="15" Padding="12,7" Margin="0,0,8,0">
+                        <TextBlock Text="{Binding SignedInAs}" Foreground="{DynamicResource PrimaryTextBrush}" VerticalAlignment="Center" />
+                    </Border>
+                    <Button Content="تبديل المظهر" Command="{Binding ToggleThemeCommand}" Background="{DynamicResource CardBackgroundBrush}" Foreground="{DynamicResource PrimaryTextBrush}" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+        <TabControl x:Name="MainTabs" Margin="18,18,18,12" SelectionChanged="MainTabs_OnSelectionChanged">
+            <TabItem Header="الرئيسية">
+                <ScrollViewer VerticalScrollBarVisibility="Visible" controls:ScrollNavigation.IsEnabled="True">
+                    <StackPanel Margin="34">
+                        <TextBlock Text="مرحباً بك في نظام نقاط البيع" FontSize="30" FontWeight="Bold" />
+                        <TextBlock Text="{Binding SignedInAs, StringFormat=المستخدم الحالي: {0}}"
+                                   Foreground="{DynamicResource SubtleBrush}" FontSize="15" Margin="0,8,0,16" />
+                        <Border Background="{DynamicResource CardBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}"
+                                BorderThickness="1" CornerRadius="12" Padding="14" Margin="0,0,0,22"
+                                HorizontalAlignment="Right">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="لون التطبيق" VerticalAlignment="Center" Margin="0,0,12,0"
+                                           FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" />
+                                <ComboBox ItemsSource="{Binding AccentPalettes}" SelectedItem="{Binding SelectedAccentPalette}"
+                                          Width="200" IsEditable="False" MaxDropDownHeight="240">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Ellipse Width="14" Height="14" Fill="{Binding Swatch}" Margin="0,0,9,0" />
+                                                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="اختر القسم الذي تريد العمل فيه" FontSize="19" FontWeight="SemiBold" Margin="0,0,0,12" />
+                        <UniformGrid Columns="3">
+                            <Button Tag="نقطة البيع" Click="NavigateToTab_OnClick" Padding="20" Margin="8"
+                                    Background="{DynamicResource AccentBrush}" Foreground="White">
+                                <StackPanel><TextBlock Text="نقطة البيع" FontSize="20" FontWeight="Bold" /><TextBlock Text="إنشاء فاتورة وإتمام عملية البيع" Margin="0,7,0,0" /></StackPanel>
+                            </Button>
+                            <Button Tag="المنتجات" Click="NavigateToTab_OnClick" IsEnabled="{Binding CanManageAdministration}" Padding="20" Margin="8">
+                                <StackPanel><TextBlock Text="المنتجات" FontSize="20" FontWeight="Bold" /><TextBlock Text="الكتالوج والأسعار والمخزون" Margin="0,7,0,0" /></StackPanel>
+                            </Button>
+                            <Button Tag="العملاء" Click="NavigateToTab_OnClick" Padding="20" Margin="8">
+                                <StackPanel><TextBlock Text="العملاء" FontSize="20" FontWeight="Bold" /><TextBlock Text="الملفات والأرصدة وكشوف الحساب" Margin="0,7,0,0" /></StackPanel>
+                            </Button>
+                            <Button Tag="الموردون" Click="NavigateToTab_OnClick" IsEnabled="{Binding CanManageAdministration}" Padding="20" Margin="8">
+                                <StackPanel><TextBlock Text="الموردون" FontSize="20" FontWeight="Bold" /><TextBlock Text="الموردون والمستحقات المالية" Margin="0,7,0,0" /></StackPanel>
+                            </Button>
+                            <Button Tag="الموظفون" Click="NavigateToTab_OnClick" IsEnabled="{Binding CanManageAdministration}" Padding="20" Margin="8">
+                                <StackPanel><TextBlock Text="الموظفون" FontSize="20" FontWeight="Bold" /><TextBlock Text="بيانات الموظفين وإدارتهم" Margin="0,7,0,0" /></StackPanel>
+                            </Button>
+                            <Button Tag="الفئات والعلامات التجارية" Click="NavigateToTab_OnClick" IsEnabled="{Binding CanManageAdministration}" Padding="20" Margin="8">
+                                <StackPanel><TextBlock Text="الفئات والعلامات التجارية" FontSize="20" FontWeight="Bold" /><TextBlock Text="إدارة بيانات التصنيف والعلامات" Margin="0,7,0,0" /></StackPanel>
+                            </Button>
+                            <Button Tag="المخزون" Click="NavigateToTab_OnClick" IsEnabled="{Binding CanManageAdministration}" Padding="20" Margin="8">
+                                <StackPanel><TextBlock Text="المخزون" FontSize="20" FontWeight="Bold" /><TextBlock Text="حركات المخزون والتسويات" Margin="0,7,0,0" /></StackPanel>
+                            </Button>
+                            <Button Tag="المستخدمون" Click="NavigateToTab_OnClick" IsEnabled="{Binding CanManageUsers}" Padding="20" Margin="8">
+                                <StackPanel><TextBlock Text="المستخدمون" FontSize="20" FontWeight="Bold" /><TextBlock Text="الحسابات والصلاحيات" Margin="0,7,0,0" /></StackPanel>
+                            </Button>
+                            <Button Tag="الفواتير" Click="NavigateToTab_OnClick" Padding="20" Margin="8">
+                                <StackPanel><TextBlock Text="الفواتير" FontSize="20" FontWeight="Bold" /><TextBlock Text="البحث عن فاتورة ومراجعة تفاصيلها" Margin="0,7,0,0" /></StackPanel>
+                            </Button>
+                            <Button Tag="فاتورة شراء" Click="NavigateToTab_OnClick" IsEnabled="{Binding CanManageAdministration}" Padding="20" Margin="8">
+                                <StackPanel><TextBlock Text="فاتورة شراء" FontSize="20" FontWeight="Bold" /><TextBlock Text="تسجيل مشتريات الموردين والمدفوعات" Margin="0,7,0,0" /></StackPanel>
+                            </Button>
+                            <Button Tag="فواتير الشراء" Click="NavigateToTab_OnClick" IsEnabled="{Binding CanManageAdministration}" Padding="20" Margin="8">
+                                <StackPanel><TextBlock Text="فواتير الشراء" FontSize="20" FontWeight="Bold" /><TextBlock Text="عرض وطباعة فواتير الموردين" Margin="0,7,0,0" /></StackPanel>
+                            </Button>
+                            <Button Tag="التقارير" Click="NavigateToTab_OnClick" Padding="20" Margin="8">
+                                <StackPanel><TextBlock Text="التقارير" FontSize="20" FontWeight="Bold" /><TextBlock Text="المبيعات والأرباح والعملاء والموردون" Margin="0,7,0,0" /></StackPanel>
+                            </Button>
+                        </UniformGrid>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            <TabItem Header="نقطة البيع"><views:CashierView DataContext="{Binding Cashier}" /></TabItem>
+            <TabItem Header="المنتجات" IsEnabled="{Binding CanManageAdministration}"><views:ProductsView DataContext="{Binding Products}" /></TabItem>
+            <TabItem Header="العملاء"><views:CustomersView DataContext="{Binding Customers}" /></TabItem>
+            <TabItem Header="الموردون" IsEnabled="{Binding CanManageAdministration}"><views:SuppliersView DataContext="{Binding Suppliers}" /></TabItem>
+            <TabItem Header="فاتورة شراء" IsEnabled="{Binding CanManageAdministration}"><views:PurchaseEntryView DataContext="{Binding PurchaseEntry}" /></TabItem>
+            <TabItem Header="فواتير الشراء" IsEnabled="{Binding CanManageAdministration}"><views:PurchaseInvoicesView DataContext="{Binding PurchaseInvoices}" /></TabItem>
+            <TabItem Header="الموظفون" IsEnabled="{Binding CanManageAdministration}"><views:EmployeesView DataContext="{Binding Employees}" /></TabItem>
+            <TabItem Header="الفئات والعلامات التجارية" IsEnabled="{Binding CanManageAdministration}"><views:MasterDataView DataContext="{Binding MasterData}" /></TabItem>
+            <TabItem Header="المخزون" IsEnabled="{Binding CanManageAdministration}"><views:InventoryView DataContext="{Binding Inventory}" /></TabItem>
+            <TabItem Header="المستخدمون" IsEnabled="{Binding CanManageUsers}"><views:UsersView DataContext="{Binding Users}" /></TabItem>
+            <TabItem Header="الفواتير"><views:InvoiceLookupView DataContext="{Binding InvoiceLookup}" /></TabItem>
+            <TabItem Header="التقارير"><views:ReportsView DataContext="{Binding Reports}" /></TabItem>
+        </TabControl>
+    </DockPanel>
+</ui:FluentWindow>
