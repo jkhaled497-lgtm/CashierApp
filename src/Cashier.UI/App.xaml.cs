@@ -20,7 +20,7 @@ namespace Cashier.UI;
 public partial class App : System.Windows.Application
 {
     private const string UpdateManifestUrl =
-        "https://raw.githubusercontent.com/jkhaled497-lgtm/CashierApp/main/version.xml";
+        "https://raw.githubusercontent.com/jkhaled497-lgtm/CashierApp/refs/heads/main/version.xml";
 
     private static readonly (string Key, string Light, string Dark)[] ThemeColors =
     [
