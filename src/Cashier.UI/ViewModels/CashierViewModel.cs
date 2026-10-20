@@ -61,6 +61,7 @@ public partial class CashierViewModel(
     private CancellationTokenSource? productSearchCancellation;
     private bool customerModeChosen;
 
+    public event EventHandler? SaleCompleted;
     public ObservableCollection<Product> Products { get; } = [];
     public ObservableCollection<CartLineViewModel> Cart { get; } = [];
     public ObservableCollection<Customer> Customers { get; } = [];
@@ -427,6 +428,15 @@ public partial class CashierViewModel(
             RefreshTotals();
             StatusMessage = $"تم حفظ الفاتورة {lastInvoice.InvoiceNumber}. الإجمالي: {lastInvoice.GrandTotal:C2}. الباقي: {ChangeDue:C2}";
             await SearchProductsAsync();
+            SaleCompleted?.Invoke(this, EventArgs.Empty);
+            try
+            {
+                await printService.PrintReceiptAsync(lastInvoice);
+            }
+            catch (Exception exception)
+            {
+                StatusMessage = $"تم حفظ الفاتورة {lastInvoice.InvoiceNumber}، لكن تعذرت معاينتها للطباعة: {exception.Message}";
+            }
         }
         catch (Exception exception) { StatusMessage = $"تعذر إتمام الفاتورة: {exception.Message}"; }
     }

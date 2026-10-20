@@ -1,0 +1,32 @@
+<Window x:Class="Cashier.UI.Views.LowStockProductsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xml:lang="ar-EG"
+        Title="تنبيه المنتجات منخفضة المخزون" Width="820" Height="560"
+        MinWidth="640" MinHeight="380" FlowDirection="RightToLeft"
+        WindowStartupLocation="CenterOwner" Background="{DynamicResource WindowBackgroundBrush}">
+    <Grid Margin="18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <StackPanel Margin="0,0,0,12">
+            <TextBlock Text="المنتجات التي وصلت إلى حد التنبيه" FontSize="22" FontWeight="SemiBold" />
+            <TextBlock Text="تعرض القائمة المنتجات التي أصبحت كمية المحل فيها أقل من أو تساوي حد التنبيه."
+                       Foreground="{DynamicResource SubtleBrush}" Margin="0,4,0,0" />
+        </StackPanel>
+        <DataGrid x:Name="LowStockGrid" Grid.Row="1" AutoGenerateColumns="False"
+                  CanUserAddRows="False" IsReadOnly="True" SelectionMode="Single"
+                  RowHeight="42" ColumnHeaderHeight="40" VerticalScrollBarVisibility="Auto">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="رمز المنتج" Binding="{Binding Sku}" Width="160" />
+                <DataGridTextColumn Header="اسم المنتج" Binding="{Binding Name}" Width="*" />
+                <DataGridTextColumn Header="كمية المحل" Binding="{Binding CurrentStock, StringFormat={}{0:0.###}}" Width="130" />
+                <DataGridTextColumn Header="حد التنبيه" Binding="{Binding MinStockAlert, StringFormat={}{0:0.###}}" Width="130" />
+            </DataGrid.Columns>
+        </DataGrid>
+        <Button Grid.Row="2" Content="إغلاق" Click="CloseWindow_OnClick"
+                HorizontalAlignment="Left" Margin="0,10,0,0" />
+    </Grid>
+</Window>

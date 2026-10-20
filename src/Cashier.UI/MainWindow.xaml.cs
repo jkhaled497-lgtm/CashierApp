@@ -16,11 +16,38 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     {
         InitializeComponent();
         DataContext = viewModel;
+        viewModel.Cashier.SaleCompleted += OnSaleCompleted;
         PreviewKeyDown += OnPreviewKeyDown;
         PreviewMouseDown += (_, _) => lastInput = DateTime.UtcNow;
         idleTimer.Tick += OnIdleTimerTick;
-        Loaded += (_, _) => idleTimer.Start();
-        Closed += (_, _) => idleTimer.Stop();
+        Loaded += OnMainWindowLoaded;
+        Closed += (_, _) =>
+        {
+            idleTimer.Stop();
+            viewModel.Cashier.SaleCompleted -= OnSaleCompleted;
+        };
+    }
+
+    private async void OnMainWindowLoaded(object sender, RoutedEventArgs e)
+    {
+        idleTimer.Start();
+        await ((ShellViewModel)DataContext).RefreshLowStockProductsAsync();
+    }
+
+    private async void OnSaleCompleted(object? sender, EventArgs e)
+    {
+        if (DataContext is ShellViewModel viewModel)
+            await viewModel.RefreshLowStockProductsAsync();
+    }
+
+    private async void LowStockAlert_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not ShellViewModel viewModel)
+            return;
+
+        await viewModel.RefreshLowStockProductsAsync();
+        if (viewModel.LowStockProducts.Count > 0)
+            new Views.LowStockProductsWindow(viewModel.LowStockProducts) { Owner = this }.ShowDialog();
     }
 
     private void NavigateToTab_OnClick(object sender, RoutedEventArgs e)
@@ -43,6 +70,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
 
         switch (tab.Header?.ToString())
         {
+            case "الرئيسية": await viewModel.RefreshLowStockProductsAsync(); break;
             case "نقطة البيع": await viewModel.Cashier.LoadAsync(); break;
             case "المنتجات": await viewModel.Products.LoadCommand.ExecuteAsync(null); break;
             case "العملاء": await viewModel.Customers.LoadCommand.ExecuteAsync(null); break;
@@ -53,6 +81,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
             case "الفئات والعلامات التجارية": await viewModel.MasterData.LoadCommand.ExecuteAsync(null); break;
             case "المخزون": await viewModel.Inventory.LoadCommand.ExecuteAsync(null); break;
             case "المستخدمون": await viewModel.Users.LoadCommand.ExecuteAsync(null); break;
+            case "الشيت اليومي": await viewModel.DailySheet.LoadCommand.ExecuteAsync(null); break;
         }
     }
 

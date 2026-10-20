@@ -103,19 +103,19 @@ public sealed class PurchaseInvoiceService(IDbContextFactory<CashierDbContext> c
         foreach (var productGroup in lines.GroupBy(line => line.ProductId))
         {
             var product = products[productGroup.Key];
-            var oldQuantity = product.CurrentStock;
+            var oldQuantity = product.CurrentStock + product.WarehouseStock;
             var addedQuantity = productGroup.Sum(line => line.Quantity);
             var addedCost = productGroup.Sum(line => line.Gross - line.Discount);
             product.CostPrice = Money(oldQuantity + addedQuantity == 0
                 ? 0
                 : (oldQuantity * product.CostPrice + addedCost) / (oldQuantity + addedQuantity));
-            product.CurrentStock += addedQuantity;
+            product.WarehouseStock += addedQuantity;
             foreach (var line in productGroup)
             {
                 db.StockAdjustments.Add(new StockAdjustment
                 {
                     ProductId = product.Id,
-                    Type = StockAdjustmentType.StockIn,
+                    Type = StockAdjustmentType.WarehouseIn,
                     Quantity = line.Quantity,
                     Reason = invoiceNumber
                 });

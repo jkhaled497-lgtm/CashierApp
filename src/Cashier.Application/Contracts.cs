@@ -31,11 +31,31 @@ public sealed record InvoiceDailyReport(
     decimal CardReceived,
     decimal CustomerBalance,
     decimal CostTotal,
-    decimal ProfitTotal);
+    decimal ProfitTotal,
+    int DailySaleCount = 0);
 public sealed record InvoiceRevenueReport(DateTime Date, decimal CashReceived, decimal CardReceived)
 {
     public decimal TotalReceived => CashReceived + CardReceived;
 }
+public sealed record DailyJournalEntry(
+    DateTimeOffset CreatedAt,
+    DailyJournalType Type,
+    string Details,
+    string? Reference,
+    string? Party,
+    string? Products,
+    decimal? Quantity,
+    decimal? Amount,
+    string Notes,
+    bool IncludeInSalesTotals = true);
+public sealed record TopSellingProductReport(int ProductId, string ProductName, string Sku, decimal QuantitySold);
+public sealed record CreateDailyProductRequest(
+    int ProductId,
+    decimal Quantity,
+    int? CustomerId,
+    int? UserId,
+    decimal? AmountPaid = null,
+    PaymentMethod PaymentMethod = PaymentMethod.Cash);
 public sealed record CustomerAccountReport(
     string CustomerCode,
     string CustomerName,
@@ -49,6 +69,7 @@ public sealed record SupplierAccountReport(
     decimal CurrentBalance,
     decimal PeriodCharges,
     decimal PeriodPayments);
+public sealed record CreateExpenseRequest(string Title, decimal Amount, DateTime Date, string? Notes, int UserId);
 public sealed record InvoiceLookupRow(
     long Id,
     string InvoiceNumber,
@@ -94,9 +115,31 @@ public interface IProductService
 {
     Task<Product?> GetByIdAsync(int productId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<Product>> SearchAsync(ProductSearch search, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Product>> GetLowStockProductsAsync(CancellationToken cancellationToken = default);
     Task<PageResult<Product>> SearchPageAsync(ProductSearch search, int pageNumber, int pageSize, bool includeInactive = false, CancellationToken cancellationToken = default);
     Task SaveAsync(Product product, CancellationToken cancellationToken = default);
     Task DeleteAsync(int productId, CancellationToken cancellationToken = default);
+}
+
+public interface IDailySheetService
+{
+    Task<IReadOnlyList<DailyProduct>> GetDailyProductsAsync(
+        DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken = default);
+    Task<DailyProduct> CreateDailyProductAsync(
+        CreateDailyProductRequest request, CancellationToken cancellationToken = default);
+    Task UpdateDailyProductAsync(
+        long dailyProductId,
+        decimal quantity,
+        int? customerId,
+        decimal? amountPaid = null,
+        PaymentMethod? paymentMethod = null,
+        CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<StockAdjustment>> GetWarehouseMovementsAsync(
+        DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<CustomerLedgerEntry>> GetCustomerMovementsAsync(
+        DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<SupplierBalanceEntry>> GetSupplierMovementsAsync(
+        DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken = default);
 }
 
 public interface ICustomerService
@@ -104,6 +147,7 @@ public interface ICustomerService
     Task<IReadOnlyList<Customer>> SearchAsync(string? text, CancellationToken cancellationToken = default);
     Task<PageResult<Customer>> SearchPageAsync(string? text, int pageNumber, int pageSize, CancellationToken cancellationToken = default);
     Task<Customer> CreateAsync(Customer customer, CancellationToken cancellationToken = default);
+    Task<Customer> CreateAsync(Customer customer, int? userId, CancellationToken cancellationToken = default);
     Task SaveAsync(Customer customer, CancellationToken cancellationToken = default);
     Task DeactivateAsync(int customerId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<CustomerLedgerEntry>> GetLedgerAsync(int customerId, CancellationToken cancellationToken = default);
@@ -111,6 +155,7 @@ public interface ICustomerService
     Task<IReadOnlyList<CustomerAccountReport>> GetAccountReportsAsync(
         DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken = default);
     Task<Customer> RecordBalancePaymentAsync(int customerId, decimal amount, int userId, PaymentMethod method, string? note, CancellationToken cancellationToken = default);
+    Task<Customer> RecordBalanceChargeAsync(int customerId, decimal amount, int userId, string? note, CancellationToken cancellationToken = default);
 }
 
 public interface IEmployeeService
@@ -154,6 +199,20 @@ public interface IStockAdjustmentService
     Task<IReadOnlyList<StockAdjustment>> GetRecentAsync(CancellationToken cancellationToken = default);
     Task<PageResult<StockAdjustment>> GetRecentPageAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default);
     Task AdjustAsync(int productId, StockAdjustmentType type, decimal quantity, int? employeeId, string? reason, CancellationToken cancellationToken = default);
+    Task UpdateAsync(long adjustmentId, decimal quantity, string? reason, CancellationToken cancellationToken = default);
+}
+
+public interface IExpenseService
+{
+    Task<BusinessExpense> CreateAsync(CreateExpenseRequest request, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<BusinessExpense>> GetForPeriodAsync(
+        DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken = default);
+}
+
+public interface IDailyJournalReportService
+{
+    Task<IReadOnlyList<DailyJournalEntry>> GetForPeriodAsync(
+        DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken = default);
 }
 
 public interface ISupplierService
@@ -197,6 +256,10 @@ public interface IInvoiceService
         DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<InvoiceRevenueReport>> GetRevenueReportsAsync(
         DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<TopSellingProductReport>> GetTopSellingProductsAsync(
+        DateTimeOffset? from = null,
+        DateTimeOffset? to = null,
+        CancellationToken cancellationToken = default);
 }
 
 public interface IPrintService

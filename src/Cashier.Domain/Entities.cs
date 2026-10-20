@@ -2,11 +2,25 @@ namespace Cashier.Domain;
 
 public enum UserRole { Admin, Manager, Cashier }
 public enum ProductUnit { Piece, Kg, Box }
-public enum StockAdjustmentType { StockIn, StockOut, Damaged, Expired }
+public enum StockAdjustmentType { StockIn, StockOut, Damaged, Expired, WarehouseIn, WarehouseOut, TransferToShop }
 public enum PaymentMethod { Cash, DebitCard, CreditCard, ClientAccount }
 public enum InvoiceStatus { Paid, Partial, Refunded, Void }
 public enum SupplierBalanceEntryType { OpeningBalance, Charge, Payment }
 public enum PurchaseInvoiceStatus { Unpaid, Partial, Paid }
+public enum DailyJournalType
+{
+    SalesInvoice,
+    PurchaseInvoice,
+    DailySale,
+    WarehouseEntry,
+    WarehouseTransfer,
+    WarehouseExit,
+    CustomerCharge,
+    CustomerPayment,
+    SupplierCharge,
+    SupplierPayment,
+    Expense
+}
 
 public sealed class UserAccount
 {
@@ -125,6 +139,7 @@ public sealed class Product
     public decimal SellingPrice { get; set; }
     public decimal MinStockAlert { get; set; }
     public decimal CurrentStock { get; set; }
+    public decimal WarehouseStock { get; set; }
     public decimal TaxRate { get; set; }
     public ProductUnit Unit { get; set; } = ProductUnit.Piece;
     public string? ImagePath { get; set; }
@@ -143,6 +158,41 @@ public sealed class StockAdjustment
     public int? EmployeeId { get; set; }
     public Employee? Employee { get; set; }
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+}
+
+public sealed class DailyProduct
+{
+    public long Id { get; set; }
+    public int ProductId { get; set; }
+    public Product Product { get; set; } = null!;
+    public required string ProductName { get; set; }
+    public required string Sku { get; set; }
+    public decimal Quantity { get; set; }
+    public decimal? UnitSellingPrice { get; set; }
+    public decimal? UnitCostPrice { get; set; }
+    public decimal AmountPaid { get; set; }
+    public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;
+    public decimal TotalAmount => Math.Round(
+        (UnitSellingPrice ?? Product?.SellingPrice ?? 0) * Quantity,
+        2,
+        MidpointRounding.AwayFromZero);
+    public decimal RemainingAmount => Math.Max(0, TotalAmount - AmountPaid);
+    public int? CustomerId { get; set; }
+    public Customer? Customer { get; set; }
+    public int? UserId { get; set; }
+    public UserAccount? User { get; set; }
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+}
+
+public sealed class BusinessExpense
+{
+    public long Id { get; set; }
+    public required string Title { get; set; }
+    public decimal Amount { get; set; }
+    public string? Notes { get; set; }
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public int? UserId { get; set; }
+    public UserAccount? User { get; set; }
 }
 
 public sealed class PurchaseInvoice
@@ -249,7 +299,7 @@ public sealed class Payment
     public string? Reference { get; set; }
 }
 
-public enum CustomerLedgerEntryType { InvoiceCharge, InvoicePayment, BalancePayment }
+public enum CustomerLedgerEntryType { InvoiceCharge, InvoicePayment, BalancePayment, BalanceCharge }
 
 public sealed class CustomerLedgerEntry
 {

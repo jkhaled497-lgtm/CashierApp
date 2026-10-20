@@ -38,6 +38,7 @@ public sealed class InvoiceSettlementTests
                 Name = "منتج اختبار",
                 SellingPrice = 10,
                 CurrentStock = 5,
+                WarehouseStock = 7,
                 TaxRate = 10
             });
             db.InvoiceSequences.Add(new InvoiceSequence { Year = DateTimeOffset.UtcNow.Year, LastNumber = 0 });
@@ -75,10 +76,22 @@ public sealed class InvoiceSettlementTests
         var customerSearch = await service.SearchPageAsync("عميل اختبار", 1, 10);
         Assert.Single(customerSearch.Items);
         Assert.Equal(invoice.InvoiceNumber, customerSearch.Items[0].InvoiceNumber);
+        await using (var oldInvoiceDb = await factory.CreateDbContextAsync())
+        {
+            var savedInvoice = await oldInvoiceDb.Invoices.SingleAsync(x => x.Id == invoice.Id);
+            savedInvoice.CreatedAt = DateTimeOffset.UtcNow.AddYears(-5);
+            await oldInvoiceDb.SaveChangesAsync();
+        }
+        var topSelling = await service.GetTopSellingProductsAsync();
+        var topProduct = Assert.Single(topSelling);
+        Assert.Equal("منتج اختبار", topProduct.ProductName);
+        Assert.Equal(1m, topProduct.QuantitySold);
         await using var verify = await factory.CreateDbContextAsync();
         var customer = await verify.Customers.SingleAsync(x => x.Id == customerId);
         Assert.Equal(5m, customer.CurrentBalance);
-        Assert.Equal(4m, (await verify.Products.SingleAsync(x => x.Id == productId)).CurrentStock);
+        var savedProduct = await verify.Products.SingleAsync(x => x.Id == productId);
+        Assert.Equal(4m, savedProduct.CurrentStock);
+        Assert.Equal(7m, savedProduct.WarehouseStock);
         var entries = await verify.CustomerLedgerEntries.Include(x => x.Invoice).OrderBy(x => x.Type).ToListAsync();
         Assert.Single(entries);
         Assert.All(entries, entry => Assert.Equal(invoice.InvoiceNumber, entry.Invoice!.InvoiceNumber));
@@ -121,6 +134,10 @@ public sealed class InvoiceSettlementTests
             .SingleAsync(entry => entry.InvoiceId == nearlyPaidInvoice.Id);
         Assert.Equal(CustomerLedgerEntryType.InvoiceCharge, nearlyPaidEntry.Type);
         Assert.Equal(0.01m, nearlyPaidEntry.Amount);
+
+        await verify.Invoices.ExecuteUpdateAsync(
+            entry => entry.SetProperty(invoice => invoice.Status, InvoiceStatus.Void));
+        Assert.Empty(await service.GetTopSellingProductsAsync());
     }
 
     [Fact]

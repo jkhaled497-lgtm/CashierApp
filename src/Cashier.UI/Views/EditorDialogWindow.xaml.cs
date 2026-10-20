@@ -19,7 +19,7 @@ public partial class EditorDialogWindow : FluentWindow
         var templateKey = entity switch
         {
             Product => "ProductEditorTemplate",
-            Customer => "CustomerEditorTemplate",
+            CustomerEditorForm => "CustomerEditorTemplate",
             Category => "CategoryEditorTemplate",
             Brand => "BrandEditorTemplate",
             Employee => "EmployeeEditorTemplate",
@@ -131,10 +131,12 @@ public partial class EditorDialogWindow : FluentWindow
                 => "اسم المورد مطلوب.",
             SupplierEditorForm supplier when supplier.OpeningBalance < 0
                 => "الرصيد الافتتاحي لا يمكن أن يكون سالباً.",
+            CustomerEditorForm customer when customer.OpeningBalance < 0
+                => "المبلغ المستحق لا يمكن أن يكون سالباً.",
             Employee employee when string.IsNullOrWhiteSpace(employee.FullName)
                 => "اسم الموظف مطلوب.",
             Product product when product.CostPrice < 0 || product.SellingPrice < 0 ||
-                                 product.CurrentStock < 0 || product.MinStockAlert < 0
+                                 product.CurrentStock < 0 || product.WarehouseStock < 0 || product.MinStockAlert < 0
                 => "تحقق من الأسعار والمخزون؛ يجب أن تكون القيم غير سالبة.",
             Product { CostPrice: <= 0 } when context.CanManagePrices
                 => "سعر التكلفة مطلوب.",

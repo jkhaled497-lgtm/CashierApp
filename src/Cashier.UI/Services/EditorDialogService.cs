@@ -42,6 +42,13 @@ public sealed class SupplierEditorForm
     public bool IsNew => Supplier.Id == 0;
 }
 
+public sealed class CustomerEditorForm
+{
+    public Customer Customer { get; set; } = new() { CustomerCode = string.Empty, FullName = string.Empty };
+    public decimal OpeningBalance { get; set; }
+    public bool IsNew => Customer.Id == 0;
+}
+
 public sealed class ProductImageSourceConverter : System.Windows.Data.IValueConverter
 {
     public object? Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)

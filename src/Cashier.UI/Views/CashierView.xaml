@@ -23,6 +23,7 @@
                         <TextBlock Text="{Binding Session.Username, StringFormat=مرحباً، {0}}"
                                    VerticalAlignment="Center" Foreground="{StaticResource SubtleBrush}" DockPanel.Dock="Left" />
                     </DockPanel>
+                    <TextBlock Text="المنتج" Style="{StaticResource EditorFieldLabel}" />
                     <ComboBox x:Name="ProductSearchBox" ItemsSource="{Binding Products}"
                               Tag="اختر المنتج أو ابحث بالاسم"
                               IsEditable="True" IsTextSearchEnabled="False"
@@ -46,7 +47,7 @@
                                     <StackPanel VerticalAlignment="Center">
                                         <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
                                         <TextBlock Foreground="{StaticResource SubtleBrush}" FontSize="11">
-                                            <Run Text="المخزون " /><Run Text="{Binding CurrentStock, Mode=OneWay}" />
+                                            <Run Text="كمية المحل " /><Run Text="{Binding CurrentStock, Mode=OneWay}" />
                                             <Run Text=" · " /><Run Text="{Binding SellingPrice, Mode=OneWay, StringFormat={}{0:C2}}" />
                                         </TextBlock>
                                     </StackPanel>
@@ -128,6 +129,7 @@
                         </StackPanel>
                     </DockPanel>
                     <DockPanel>
+                        <TextBlock Text="العميل" Style="{StaticResource EditorFieldLabel}" VerticalAlignment="Center" />
                         <ComboBox ItemsSource="{Binding Customers}" SelectedItem="{Binding SelectedCustomer}"
                                   Tag="اختر العميل"
                                   DisplayMemberPath="FullName" IsEditable="True" IsTextSearchEnabled="True"

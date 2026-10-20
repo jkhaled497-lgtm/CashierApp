@@ -18,6 +18,7 @@
                             <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <StackPanel Grid.Row="0" Grid.Column="0"><TextBlock Text="اسم المنتج *" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
                         <StackPanel Grid.Row="0" Grid.Column="1"><TextBlock Text="الوحدة" Style="{StaticResource EditorFieldLabel}" /><ComboBox ItemsSource="{Binding DataContext.Units, RelativeSource={RelativeSource AncestorType=Window}}" SelectedItem="{Binding Unit}"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource ArabicEnumConverter}}" /></DataTemplate></ComboBox.ItemTemplate></ComboBox></StackPanel>
@@ -35,9 +36,52 @@
                                 <StackPanel Grid.Column="1"><TextBlock Text="سعر البيع *" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding SellingPrice, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}" /></StackPanel>
                             </Grid>
                         </StackPanel>
-                        <StackPanel Grid.Row="4" Grid.Column="0"><TextBlock Text="الكمية بالمخزون" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding CurrentStock, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}" /></StackPanel>
-                        <StackPanel Grid.Row="4" Grid.Column="1"><TextBlock Text="حد تنبيه المخزون" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding MinStockAlert, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}" /></StackPanel>
+                        <StackPanel Grid.Row="4" Grid.Column="0">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Id}" Value="0">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <TextBlock Text="الكمية بالمحل" Style="{StaticResource EditorFieldLabel}" />
+                            <TextBox Text="{Binding CurrentStock, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="4" Grid.Column="1">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Id}" Value="0">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <TextBlock Text="الكمية بالمخزن" Style="{StaticResource EditorFieldLabel}" />
+                            <TextBox Text="{Binding WarehouseStock, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}" />
+                        </StackPanel>
+                        <TextBlock Grid.Row="4" Grid.ColumnSpan="2" Text="تُدار كميات المحل والمخزن من شاشة المخزون."
+                                   VerticalAlignment="Center" TextWrapping="Wrap" Margin="8" Foreground="{StaticResource SubtleBrush}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Id}" Value="0">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
                         <StackPanel Grid.Row="5" Grid.ColumnSpan="2">
+                            <TextBlock Text="حد تنبيه كمية المحل" Style="{StaticResource EditorFieldLabel}" />
+                            <TextBox Text="{Binding MinStockAlert, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="6" Grid.ColumnSpan="2">
                             <TextBlock Text="صورة المنتج" Style="{StaticResource EditorFieldLabel}" />
                             <Button Click="ChooseProductImage_Click" HorizontalAlignment="Right" Padding="8" Background="{DynamicResource SurfaceBrush}">
                                 <Border Width="132" Height="132" CornerRadius="12" ClipToBounds="True">
@@ -63,13 +107,17 @@
                     <TextBlock Text="بيانات العميل" Style="{StaticResource EditorSectionTitle}" />
                     <Grid>
                         <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
-                        <StackPanel Grid.Row="0" Grid.ColumnSpan="2"><TextBlock Text="اسم العميل (اختياري)" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding FullName, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
-                        <StackPanel Grid.Row="1" Grid.Column="0"><TextBlock Text="رقم الهاتف" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
-                        <StackPanel Grid.Row="1" Grid.Column="1"><TextBlock Text="العنوان" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Address, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
-                        <StackPanel Grid.Row="2" Grid.ColumnSpan="2"><TextBlock Text="ملاحظات" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                        <StackPanel Grid.Row="0" Grid.ColumnSpan="2"><TextBlock Text="اسم العميل (اختياري)" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Customer.FullName, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="0"><TextBlock Text="رقم الهاتف" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Customer.Phone, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="1"><TextBlock Text="العنوان" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Customer.Address, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                        <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Visibility="{Binding IsNew, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock Text="المبلغ المستحق عند إضافة العميل" Style="{StaticResource EditorFieldLabel}" />
+                            <TextBox Text="{Binding OpeningBalance, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="3" Grid.ColumnSpan="2"><TextBlock Text="ملاحظات" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Customer.Notes, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
                     </Grid>
-                    <CheckBox Content="العميل مفعل" IsChecked="{Binding IsActive}" Margin="6,12" />
+                    <CheckBox Content="العميل مفعل" IsChecked="{Binding Customer.IsActive}" Margin="6,12" />
                 </StackPanel>
             </ScrollViewer>
         </DataTemplate>
@@ -93,7 +141,7 @@
                     <TextBlock Text="العنوان" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Supplier.Address, UpdateSourceTrigger=PropertyChanged}" />
                     <TextBlock Text="الرقم الضريبي" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Supplier.TaxNumber, UpdateSourceTrigger=PropertyChanged}" />
                     <StackPanel Visibility="{Binding IsNew, Converter={StaticResource BooleanToVisibilityConverter}}">
-                        <TextBlock Text="المبلغ المستحق عند الإضافة" Style="{StaticResource EditorFieldLabel}" />
+                        <TextBlock Text="المبلغ المستحق للمورد عند الإضافة" Style="{StaticResource EditorFieldLabel}" />
                         <TextBox Text="{Binding OpeningBalance, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}" />
                     </StackPanel>
                     <TextBlock Text="ملاحظات" Style="{StaticResource EditorFieldLabel}" /><TextBox Text="{Binding Supplier.Notes, UpdateSourceTrigger=PropertyChanged}" MinHeight="90" AcceptsReturn="True" TextWrapping="Wrap" />

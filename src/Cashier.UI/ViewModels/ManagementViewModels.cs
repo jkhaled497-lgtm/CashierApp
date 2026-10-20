@@ -143,7 +143,7 @@ public partial class ProductsViewModel(
         Id = product.Id, Sku = product.Sku, Barcode = product.Barcode, Name = product.Name,
         Description = product.Description, CategoryId = product.CategoryId, BrandId = product.BrandId,
         CostPrice = product.CostPrice, SellingPrice = product.SellingPrice, MinStockAlert = product.MinStockAlert,
-        CurrentStock = product.CurrentStock, TaxRate = product.TaxRate, Unit = product.Unit,
+        CurrentStock = product.CurrentStock, WarehouseStock = product.WarehouseStock, TaxRate = product.TaxRate, Unit = product.Unit,
         ImagePath = product.ImagePath, IsActive = product.IsActive
     };
 }
@@ -216,11 +216,13 @@ public partial class CustomersViewModel(
     [RelayCommand]
     private async Task NewCustomerAsync()
     {
-        var customer = new Customer { CustomerCode = string.Empty, FullName = string.Empty };
-        if (!editor.Show(customer, "إضافة عميل")) return;
+        var form = new CustomerEditorForm();
+        if (!editor.Show(form, "إضافة عميل")) return;
         try
         {
-            var created = await customers.CreateAsync(customer);
+            var customer = form.Customer;
+            customer.CurrentBalance = form.OpeningBalance;
+            var created = await customers.CreateAsync(customer, session.Current?.UserId);
             Status = "تم حفظ بيانات العميل.";
             await LoadAsync();
             Selected = Items.SingleOrDefault(x => x.Id == created.Id);
@@ -232,14 +234,14 @@ public partial class CustomersViewModel(
     private async Task EditAsync()
     {
         if (Selected is null || Selected.Id == 0 || Selected.IsWalkIn) return;
-        var editedCustomer = Copy(Selected);
-        if (!editor.Show(editedCustomer, "تعديل بيانات العميل")) return;
+        var form = new CustomerEditorForm { Customer = Copy(Selected) };
+        if (!editor.Show(form, "تعديل بيانات العميل")) return;
         try
         {
-            await customers.SaveAsync(editedCustomer);
+            await customers.SaveAsync(form.Customer);
             Status = "تم حفظ بيانات العميل.";
             await LoadAsync();
-            Selected = Items.SingleOrDefault(x => x.Id == editedCustomer.Id);
+            Selected = Items.SingleOrDefault(x => x.Id == form.Customer.Id);
         }
         catch (Exception e) { Status = $"تعذر حفظ العميل: {e.Message}"; }
     }
@@ -275,6 +277,38 @@ public partial class CustomersViewModel(
             Selected = Items.SingleOrDefault(x => x.Id == customerId);
         }
         catch (Exception e) { Status = $"تعذر تسجيل الدفعة: {e.Message}"; }
+    }
+
+    [RelayCommand]
+    private async Task AddBalanceChargeAsync()
+    {
+        if (Selected is null || Selected.Id == 0 || Selected.IsWalkIn)
+        {
+            Status = "اختر عميلاً مسجلاً أولاً.";
+            return;
+        }
+        if (session.Current is not { } currentUser)
+        {
+            Status = "انتهت الجلسة؛ سجل الدخول مجدداً.";
+            return;
+        }
+
+        var customerId = Selected.Id;
+        try
+        {
+            await customers.RecordBalanceChargeAsync(
+                customerId, BalancePaymentAmount, currentUser.UserId, BalancePaymentNote);
+            BalancePaymentAmount = 0;
+            BalancePaymentNote = string.Empty;
+            Status = "تم إضافة الاستحقاق وتحديث رصيد العميل.";
+            await LoadAsync();
+            Selected = Items.SingleOrDefault(item => item.Id == customerId);
+            await LedgerPager.LoadAsync(1);
+        }
+        catch (Exception exception)
+        {
+            Status = $"تعذر إضافة استحقاق العميل: {exception.Message}";
+        }
     }
 
     private async Task LoadLedgerAsync(Customer? customer)
@@ -618,7 +652,7 @@ public partial class SuppliersViewModel(
     }
 
     [RelayCommand]
-    private async Task RegisterBalanceEntryAsync()
+    private async Task RegisterBalancePaymentAsync()
     {
         if (Selected is null) { Status = "اختر مورداً أولاً."; return; }
         if (session.Current is null) { Status = "انتهت الجلسة؛ سجل الدخول مجدداً."; return; }
@@ -629,12 +663,35 @@ public partial class SuppliersViewModel(
                 session.Current.UserId, BalancePaymentMethod, BalanceNote);
             BalanceAmount = 0;
             BalanceNote = string.Empty;
-            Status = "تم تسجيل الدفعة من إجمالي مستحق المورد.";
+            Status = "تم تسجيل سداد الاستحقاق للمورد.";
             await Pager.LoadAsync(Pager.PageNumber);
             Selected = Items.SingleOrDefault(x => x.Id == supplierId);
             await LedgerPager.LoadAsync(1);
         }
         catch (Exception exception) { Status = $"تعذر تسجيل حركة المورد: {exception.Message}"; }
+    }
+
+    [RelayCommand]
+    private async Task RegisterBalanceChargeAsync()
+    {
+        if (Selected is null) { Status = "اختر مورداً أولاً."; return; }
+        if (session.Current is null) { Status = "انتهت الجلسة؛ سجل الدخول مجدداً."; return; }
+        var supplierId = Selected.Id;
+        try
+        {
+            await suppliers.ChangeBalanceAsync(supplierId, BalanceAmount, SupplierBalanceEntryType.Charge,
+                session.Current.UserId, BalancePaymentMethod, BalanceNote);
+            BalanceAmount = 0;
+            BalanceNote = string.Empty;
+            Status = "تم إضافة استحقاق المورد.";
+            await Pager.LoadAsync(Pager.PageNumber);
+            Selected = Items.SingleOrDefault(item => item.Id == supplierId);
+            await LedgerPager.LoadAsync(1);
+        }
+        catch (Exception exception)
+        {
+            Status = $"تعذر إضافة استحقاق المورد: {exception.Message}";
+        }
     }
 
     [RelayCommand]
@@ -666,11 +723,15 @@ public partial class InventoryViewModel(
 {
     public ObservableCollection<StockAdjustment> Adjustments { get; } = [];
     public ObservableCollection<Product> Products { get; } = [];
-    public Array Types { get; } = Enum.GetValues<StockAdjustmentType>();
+    public IReadOnlyList<StockAdjustmentType> Types { get; } =
+    [
+        StockAdjustmentType.WarehouseIn,
+        StockAdjustmentType.TransferToShop
+    ];
     public PageNavigator Pager { get; } = new();
     public bool CanAdjust => session.Current?.CanManageCatalog == true;
     [ObservableProperty] private Product? selectedProduct;
-    [ObservableProperty] private StockAdjustmentType selectedType = StockAdjustmentType.StockIn;
+    [ObservableProperty] private StockAdjustmentType selectedType = StockAdjustmentType.WarehouseIn;
     [ObservableProperty] private decimal quantity = 1;
     [ObservableProperty] private string? reason;
     [ObservableProperty] private string status = string.Empty;
@@ -680,8 +741,10 @@ public partial class InventoryViewModel(
     {
         try
         {
+            var selectedProductId = SelectedProduct?.Id;
             Products.Clear();
             foreach (var product in await products.SearchAsync(new ProductSearch())) Products.Add(product);
+            SelectedProduct = Products.FirstOrDefault(product => product.Id == selectedProductId);
             Pager.Bind(LoadPageAsync);
             await Pager.LoadAsync(1);
         }
@@ -829,6 +892,8 @@ public sealed partial class ShellViewModel(
     UsersViewModel users,
     InvoiceLookupViewModel invoiceLookup,
     ReportsViewModel reports,
+    DailySheetViewModel dailySheet,
+    IProductService productService,
     SessionManager session) : ObservableObject
 {
     private static readonly AccentPaletteOption[] PaletteOptions =
@@ -841,7 +906,11 @@ public sealed partial class ShellViewModel(
 
     [ObservableProperty] private bool isDarkTheme = true;
     [ObservableProperty] private AccentPaletteOption selectedAccentPalette = PaletteOptions[0];
+    [ObservableProperty] private string lowStockStatus = string.Empty;
     public IReadOnlyList<AccentPaletteOption> AccentPalettes => PaletteOptions;
+    public ObservableCollection<Product> LowStockProducts { get; } = [];
+    public int LowStockCount => LowStockProducts.Count;
+    public bool HasLowStock => LowStockCount > 0;
     public CashierViewModel Cashier { get; } = cashier;
     public ProductsViewModel Products { get; } = products;
     public PurchaseEntryViewModel PurchaseEntry { get; } = purchaseEntry;
@@ -854,6 +923,7 @@ public sealed partial class ShellViewModel(
     public UsersViewModel Users { get; } = users;
     public InvoiceLookupViewModel InvoiceLookup { get; } = invoiceLookup;
     public ReportsViewModel Reports { get; } = reports;
+    public DailySheetViewModel DailySheet { get; } = dailySheet;
     public string SignedInAs => $"{session.Current?.Role switch
     {
         UserRole.Admin => "مدير النظام",
@@ -863,6 +933,26 @@ public sealed partial class ShellViewModel(
     }} · {session.Current?.Username}";
     public bool CanManageAdministration => session.Current?.Role is UserRole.Admin or UserRole.Manager;
     public bool CanManageUsers => session.Current?.Role == UserRole.Admin;
+
+    public async Task RefreshLowStockProductsAsync()
+    {
+        try
+        {
+            var lowStockProducts = await productService.GetLowStockProductsAsync();
+            LowStockProducts.Clear();
+            foreach (var product in lowStockProducts)
+                LowStockProducts.Add(product);
+            LowStockStatus = string.Empty;
+        }
+        catch (Exception exception)
+        {
+            LowStockProducts.Clear();
+            LowStockStatus = $"تعذر تحميل تنبيه المخزون: {exception.Message}";
+        }
+
+        OnPropertyChanged(nameof(LowStockCount));
+        OnPropertyChanged(nameof(HasLowStock));
+    }
 
     partial void OnSelectedAccentPaletteChanged(AccentPaletteOption value) =>
         App.ApplyAccentPalette(value.Key);

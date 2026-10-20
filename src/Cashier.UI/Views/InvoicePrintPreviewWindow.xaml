@@ -27,8 +27,10 @@
                     </ComboBox>
                 </StackPanel>
                 <StackPanel>
-                    <TextBlock Text="معاينة الفاتورة" FontSize="22" FontWeight="SemiBold"
+                    <TextBlock Text="تم حفظ الفاتورة. هل تريد طباعتها الآن؟" FontSize="22" FontWeight="SemiBold"
                                VerticalAlignment="Center" />
+                    <TextBlock Text="يمكنك اختيار تنسيق الورق ثم الطباعة، أو إغلاق النافذة للمتابعة دون طباعة."
+                               FontSize="11" Foreground="{DynamicResource SubtleBrush}" />
                     <TextBlock x:Name="PaperFormatHint"
                                Text="لطباعة إيصال 80 مم، اختر مقاس الورق نفسه من إعدادات الطابعة."
                                FontSize="11" Foreground="{DynamicResource SubtleBrush}"

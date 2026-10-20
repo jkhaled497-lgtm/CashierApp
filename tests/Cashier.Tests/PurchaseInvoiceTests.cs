@@ -9,7 +9,7 @@ namespace Cashier.Tests;
 public sealed class PurchaseInvoiceTests
 {
     [Fact]
-    public async Task CreateInvoice_StoresPartialPaymentAndUpdatesStockAndSupplierBalance()
+    public async Task CreateInvoice_StoresPartialPaymentAndAddsPurchasedStockToWarehouse()
     {
         await using var factory = await CreateDatabaseAsync();
         var (supplier, product, user) = await SeedAsync(factory, UserRole.Manager);
@@ -31,12 +31,13 @@ public sealed class PurchaseInvoiceTests
 
         await using var db = await factory.CreateDbContextAsync();
         var savedProduct = await db.Products.SingleAsync(item => item.Id == product.Id);
-        Assert.Equal(5m, savedProduct.CurrentStock);
+        Assert.Equal(2m, savedProduct.CurrentStock);
+        Assert.Equal(3m, savedProduct.WarehouseStock);
         Assert.Equal(7.8m, savedProduct.CostPrice);
         var savedSupplier = await db.Suppliers.SingleAsync(item => item.Id == supplier.Id);
         Assert.Equal(21.5m, savedSupplier.CurrentBalance);
         Assert.Equal(1, await db.StockAdjustments.CountAsync(item =>
-            item.ProductId == product.Id && item.Type == StockAdjustmentType.StockIn));
+            item.ProductId == product.Id && item.Type == StockAdjustmentType.WarehouseIn));
 
         var balanceEntries = await db.SupplierBalanceEntries.OrderBy(entry => entry.Id).ToListAsync();
         Assert.Equal(
@@ -44,6 +45,12 @@ public sealed class PurchaseInvoiceTests
             balanceEntries.Select(entry => entry.Type));
         Assert.Equal([32m, 21.5m], balanceEntries.Select(entry => entry.BalanceAfter));
         Assert.Equal(PaymentMethod.CreditCard, balanceEntries[1].PaymentMethod);
+
+        var warehouseSheet = await new DailySheetService(factory).GetWarehouseMovementsAsync(
+            DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(1));
+        var purchaseMovement = Assert.Single(warehouseSheet);
+        Assert.Equal(StockAdjustmentType.WarehouseIn, purchaseMovement.Type);
+        Assert.Equal(invoice.InvoiceNumber, purchaseMovement.Reason);
 
         var page = await service.GetPageAsync(supplier.Id, 1, 20);
         Assert.Equal(invoice.InvoiceNumber, Assert.Single(page.Items).InvoiceNumber);

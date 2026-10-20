@@ -151,6 +151,7 @@ public partial class App : System.Windows.Application
                     services.AddTransient<PurchaseEntryViewModel>();
                     services.AddTransient<PurchaseInvoicesViewModel>();
                     services.AddTransient<ReportsViewModel>();
+                    services.AddTransient<DailySheetViewModel>();
                     services.AddTransient<ShellViewModel>();
                     services.AddTransient<LoginWindow>();
                     services.AddTransient<MainWindow>();

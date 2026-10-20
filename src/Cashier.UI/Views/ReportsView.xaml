@@ -17,7 +17,7 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel>
                     <TextBlock Text="التقارير والتحليلات" FontSize="24" FontWeight="SemiBold" />
-                    <TextBlock Text="ملخص المبيعات والأرباح والإيرادات وأرصدة العملاء والموردين"
+                    <TextBlock Text="ملخص المبيعات والإيرادات وأرصدة العملاء والموردين والمصروفات"
                                Foreground="{DynamicResource SubtleBrush}" Margin="0,3,0,0" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
@@ -35,14 +35,15 @@
                 </StackPanel>
             </Grid>
         </Border>
-        <UniformGrid Grid.Row="1" Columns="5" Margin="0,0,0,12">
+        <UniformGrid Grid.Row="1" Columns="6" Margin="0,0,0,12">
             <Border Margin="0,0,5,0" Padding="12" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="11">
                 <StackPanel>
                     <TextBlock Text="إجمالي المبيعات" Foreground="{DynamicResource SubtleBrush}" />
                     <TextBlock Text="{Binding PeriodSalesTotal, StringFormat={}{0:N2}}" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" />
                 </StackPanel>
             </Border>
-            <Border Margin="5,0" Padding="12" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="11">
+            <Border Margin="5,0" Padding="12" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="11"
+                    Visibility="{Binding IsAdmin, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <StackPanel>
                     <TextBlock Text="إجمالي الأرباح" Foreground="{DynamicResource SubtleBrush}" />
                     <TextBlock Text="{Binding PeriodProfitTotal, StringFormat={}{0:N2}}" FontSize="20" FontWeight="Bold" />
@@ -66,8 +67,34 @@
                     <TextBlock Text="{Binding SupplierBalanceTotal, StringFormat={}{0:N2}}" FontSize="20" FontWeight="Bold" />
                 </StackPanel>
             </Border>
+            <Border Margin="5,0,0,0" Padding="12" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="11"
+                    Visibility="{Binding CanManageExpenses, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <StackPanel>
+                    <TextBlock Text="مصروفات الفترة" Foreground="{DynamicResource SubtleBrush}" />
+                    <TextBlock Text="{Binding PeriodExpenseTotal, StringFormat={}{0:N2}}" FontSize="20" FontWeight="Bold" />
+                </StackPanel>
+            </Border>
         </UniformGrid>
         <TabControl Grid.Row="2">
+            <TabItem Header="تقرير المنتجات">
+                <TabControl Margin="4">
+                    <TabItem Header="أعلى المنتجات مبيعاً">
+                        <Grid Margin="8">
+                            <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                            <Button Grid.Row="0" Content="تصدير أعلى المنتجات مبيعاً CSV" Command="{Binding ExportTopSellingCommand}"
+                                    IsEnabled="{Binding CanExportTopSelling}" HorizontalAlignment="Left" Margin="2,2,2,8" />
+                            <DataGrid Grid.Row="1" ItemsSource="{Binding TopSellingRows}" AutoGenerateColumns="False" IsReadOnly="True"
+                                      CanUserAddRows="False" MinHeight="0" VerticalScrollBarVisibility="Auto">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="رمز المنتج" Binding="{Binding Sku}" Width="180" />
+                                    <DataGridTextColumn Header="اسم المنتج" Binding="{Binding ProductName}" Width="*" />
+                                    <DataGridTextColumn Header="الكمية المباعة" Binding="{Binding QuantitySold, StringFormat={}{0:0.###}}" Width="180" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </TabItem>
+                </TabControl>
+            </TabItem>
             <TabItem Header="العمل اليومي">
                 <Grid Margin="8">
                     <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
@@ -78,6 +105,7 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="التاريخ" Binding="{Binding Date, StringFormat={}{0:dd-MM-yyyy}}" Width="*" />
                             <DataGridTextColumn Header="عدد الفواتير" Binding="{Binding InvoiceCount, StringFormat={}{0:N0}}" Width="150" />
+                            <DataGridTextColumn Header="حركات الشيت اليومي" Binding="{Binding DailySaleCount, StringFormat={}{0:N0}}" Width="170" />
                             <DataGridTextColumn Header="إجمالي المبيعات" Binding="{Binding SalesTotal, StringFormat={}{0:N2}}" Width="180" />
                             <DataGridTextColumn Header="نقدي" Binding="{Binding CashReceived, StringFormat={}{0:N2}}" Width="160" />
                             <DataGridTextColumn Header="بطاقة" Binding="{Binding CardReceived, StringFormat={}{0:N2}}" Width="160" />
@@ -86,7 +114,78 @@
                     </DataGrid>
                 </Grid>
             </TabItem>
-            <TabItem Header="الأرباح">
+            <TabItem Header="دفتر اليومية">
+                <Grid Margin="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Border Padding="10" Margin="0,0,0,8" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="10">
+                        <WrapPanel VerticalAlignment="Center">
+                            <TextBlock Text="تاريخ اليومية" VerticalAlignment="Center" Margin="4" />
+                            <DatePicker SelectedDate="{Binding JournalDate}" Width="155" Margin="3" />
+                            <Button Content="عرض اليومية" Command="{Binding LoadDailyJournalCommand}"
+                                    IsEnabled="{Binding IsJournalLoading, Converter={StaticResource InverseBooleanConverter}}"
+                                    Background="{DynamicResource AccentBrush}" Foreground="White" />
+                        </WrapPanel>
+                    </Border>
+                    <UniformGrid Grid.Row="1" Columns="4" Margin="0,0,0,8">
+                        <Border Margin="0,0,4,4" Padding="8" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="8">
+                            <StackPanel><TextBlock Text="فواتير البيع" Foreground="{DynamicResource SubtleBrush}" /><TextBlock Text="{Binding JournalSalesTotal, StringFormat={}{0:N2}}" FontSize="17" FontWeight="Bold" /></StackPanel>
+                        </Border>
+                        <Border Margin="4,0,4,4" Padding="8" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="8">
+                            <StackPanel><TextBlock Text="فواتير الشراء" Foreground="{DynamicResource SubtleBrush}" /><TextBlock Text="{Binding JournalPurchaseTotal, StringFormat={}{0:N2}}" FontSize="17" FontWeight="Bold" /></StackPanel>
+                        </Border>
+                        <Border Margin="4,0,4,4" Padding="8" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="8">
+                            <StackPanel><TextBlock Text="المصروفات" Foreground="{DynamicResource SubtleBrush}" /><TextBlock Text="{Binding JournalExpenseTotal, StringFormat={}{0:N2}}" FontSize="17" FontWeight="Bold" /></StackPanel>
+                        </Border>
+                        <Border Margin="4,0,0,4" Padding="8" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="8">
+                            <StackPanel><TextBlock Text="استحقاقات العملاء" Foreground="{DynamicResource SubtleBrush}" /><TextBlock Text="{Binding JournalCustomerCharges, StringFormat={}{0:N2}}" FontSize="17" FontWeight="Bold" /></StackPanel>
+                        </Border>
+                        <Border Margin="0,4,4,0" Padding="8" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="8">
+                            <StackPanel><TextBlock Text="سداد العملاء" Foreground="{DynamicResource SubtleBrush}" /><TextBlock Text="{Binding JournalCustomerPayments, StringFormat={}{0:N2}}" FontSize="17" FontWeight="Bold" /></StackPanel>
+                        </Border>
+                        <Border Margin="4,4" Padding="8" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="8">
+                            <StackPanel><TextBlock Text="استحقاقات الموردين" Foreground="{DynamicResource SubtleBrush}" /><TextBlock Text="{Binding JournalSupplierCharges, StringFormat={}{0:N2}}" FontSize="17" FontWeight="Bold" /></StackPanel>
+                        </Border>
+                        <Border Margin="4,4" Padding="8" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="8">
+                            <StackPanel><TextBlock Text="سداد الموردين" Foreground="{DynamicResource SubtleBrush}" /><TextBlock Text="{Binding JournalSupplierPayments, StringFormat={}{0:N2}}" FontSize="17" FontWeight="Bold" /></StackPanel>
+                        </Border>
+                        <Border Margin="4,4,0,0" Padding="8" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="8">
+                            <StackPanel><TextBlock Text="عدد الحركات" Foreground="{DynamicResource SubtleBrush}" /><TextBlock Text="{Binding DailyJournalRows.Count, StringFormat={}{0:N0}}" FontSize="17" FontWeight="Bold" /></StackPanel>
+                        </Border>
+                        <Border Margin="0,4,4,0" Padding="8" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="8">
+                            <StackPanel><TextBlock Text="كمية المنتجات المباعة" Foreground="{DynamicResource SubtleBrush}" /><TextBlock Text="{Binding JournalShopQuantitySold, StringFormat={}{0:0.###}}" FontSize="17" FontWeight="Bold" /></StackPanel>
+                        </Border>
+                        <Border Margin="4,4" Padding="8" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="8">
+                            <StackPanel><TextBlock Text="كمية الوارد للمخزن" Foreground="{DynamicResource SubtleBrush}" /><TextBlock Text="{Binding JournalWarehouseEntries, StringFormat={}{0:0.###}}" FontSize="17" FontWeight="Bold" /></StackPanel>
+                        </Border>
+                        <Border Margin="4,4" Padding="8" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="8">
+                            <StackPanel><TextBlock Text="كمية التحويل للمحل" Foreground="{DynamicResource SubtleBrush}" /><TextBlock Text="{Binding JournalWarehouseTransfers, StringFormat={}{0:0.###}}" FontSize="17" FontWeight="Bold" /></StackPanel>
+                        </Border>
+                    </UniformGrid>
+                    <DataGrid Grid.Row="2" ItemsSource="{Binding DailyJournalRows}" AutoGenerateColumns="False" IsReadOnly="True"
+                              CanUserAddRows="False" MinHeight="0" RowHeight="40" ColumnHeaderHeight="38"
+                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="الوقت" Binding="{Binding CreatedAt, Converter={StaticResource EgyptDateTimeConverter}}" Width="165" />
+                            <DataGridTextColumn Header="نوع الحركة" Binding="{Binding Type, Converter={StaticResource ArabicEnumConverter}}" Width="155" />
+                            <DataGridTextColumn Header="التفاصيل" Binding="{Binding Details}" Width="190" />
+                            <DataGridTextColumn Header="رقم المرجع" Binding="{Binding Reference}" Width="130" />
+                            <DataGridTextColumn Header="العميل / المورد" Binding="{Binding Party}" Width="180" />
+                            <DataGridTextColumn Header="المنتجات والكميات" Binding="{Binding Products}" Width="260" />
+                            <DataGridTextColumn Header="الكمية" Binding="{Binding Quantity, StringFormat={}{0:0.###}}" Width="95" />
+                            <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat={}{0:N2}}" Width="120" />
+                            <DataGridTextColumn Header="الملاحظة" Binding="{Binding Notes}" Width="280" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <TextBlock Grid.Row="3" Text="{Binding JournalStatus}" Foreground="{DynamicResource AlertBrush}"
+                               TextWrapping="Wrap" Margin="4,8,4,0" />
+                </Grid>
+            </TabItem>
+            <TabItem Header="الأرباح" Visibility="{Binding IsAdmin, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Grid Margin="8">
                     <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
                     <Button Grid.Row="0" Content="تصدير تقرير الأرباح CSV" Command="{Binding ExportProfitCommand}"
@@ -149,6 +248,38 @@
                             <DataGridTextColumn Header="الرصيد الحالي" Binding="{Binding CurrentBalance, StringFormat={}{0:N2}}" Width="170" />
                             <DataGridTextColumn Header="مستحقات خلال الفترة" Binding="{Binding PeriodCharges, StringFormat={}{0:N2}}" Width="200" />
                             <DataGridTextColumn Header="مدفوعات خلال الفترة" Binding="{Binding PeriodPayments, StringFormat={}{0:N2}}" Width="200" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+            <TabItem Header="المصروفات" Visibility="{Binding CanManageExpenses, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid Margin="8">
+                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                    <DockPanel Margin="2,2,2,8">
+                        <Button Content="تصدير المصروفات CSV" Command="{Binding ExportExpensesCommand}"
+                                IsEnabled="{Binding CanExportExpenses}" DockPanel.Dock="Left" />
+                        <Button Content="تسجيل المصروف" Command="{Binding AddExpenseCommand}"
+                                Background="{DynamicResource AccentBrush}" Foreground="White" DockPanel.Dock="Right" />
+                        <TextBlock Text="اسم المصروف" VerticalAlignment="Center" Margin="4,0" />
+                        <TextBox Width="180" Margin="4,0" Text="{Binding ExpenseTitle, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="وصف المصروف، مثل فاتورة الكهرباء" />
+                        <TextBlock Text="القيمة" VerticalAlignment="Center" Margin="4,0" />
+                        <TextBox Width="110" Margin="4,0" Text="{Binding ExpenseAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=0.00}"
+                                 ToolTip="قيمة المصروف" />
+                        <TextBlock Text="تاريخ المصروف" VerticalAlignment="Center" Margin="4,0" />
+                        <DatePicker Width="145" Margin="4,0" SelectedDate="{Binding ExpenseDate}" />
+                        <TextBlock Text="ملاحظات" VerticalAlignment="Center" Margin="4,0" />
+                        <TextBox Width="220" Margin="4,0" Text="{Binding ExpenseNotes, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="ملاحظات (اختياري)" />
+                    </DockPanel>
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding ExpenseRows}" AutoGenerateColumns="False" IsReadOnly="True"
+                              CanUserAddRows="False" MinHeight="0" VerticalScrollBarVisibility="Auto">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="التاريخ" Binding="{Binding CreatedAt, Converter={StaticResource EgyptDateTimeConverter}}" Width="180" />
+                            <DataGridTextColumn Header="المصروف" Binding="{Binding Title}" Width="*" />
+                            <DataGridTextColumn Header="القيمة" Binding="{Binding Amount, StringFormat={}{0:N2}}" Width="140" />
+                            <DataGridTextColumn Header="الملاحظات" Binding="{Binding Notes}" Width="*" />
+                            <DataGridTextColumn Header="المستخدم" Binding="{Binding User.Username}" Width="150" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>

@@ -118,6 +118,64 @@ public sealed class ProductPaginationTests
         Assert.Equal("Product 305", result[^1].Name);
     }
 
+    [Fact]
+    public async Task GetLowStockProductsAsync_ReturnsActiveProductsAtOrBelowAlertThreshold()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<CashierDbContext>().UseSqlite(connection).Options;
+        var factory = new TestContextFactory(options);
+        await using (var db = await factory.CreateDbContextAsync())
+        {
+            await db.Database.EnsureCreatedAsync();
+            db.Products.AddRange(
+                new Product
+                {
+                    Sku = "LOW",
+                    Name = "وصل للحد",
+                    CurrentStock = 3,
+                    MinStockAlert = 3,
+                    SellingPrice = 1,
+                    CostPrice = 1
+                },
+                new Product
+                {
+                    Sku = "BELOW",
+                    Name = "أقل من الحد",
+                    CurrentStock = 1,
+                    MinStockAlert = 3,
+                    SellingPrice = 1,
+                    CostPrice = 1
+                },
+                new Product
+                {
+                    Sku = "OK",
+                    Name = "أعلى من الحد",
+                    CurrentStock = 4,
+                    MinStockAlert = 3,
+                    SellingPrice = 1,
+                    CostPrice = 1
+                },
+                new Product
+                {
+                    Sku = "INACTIVE",
+                    Name = "منتج غير نشط",
+                    CurrentStock = 0,
+                    MinStockAlert = 3,
+                    IsActive = false,
+                    SellingPrice = 1,
+                    CostPrice = 1
+                });
+            await db.SaveChangesAsync();
+        }
+
+        var products = await new ProductService(factory).GetLowStockProductsAsync();
+
+        Assert.Equal(2, products.Count);
+        Assert.Contains(products, product => product.Name == "أقل من الحد");
+        Assert.Contains(products, product => product.Name == "وصل للحد");
+    }
+
     private static Product Product(string sku, string name, bool isActive = true) =>
         new() { Sku = sku, Name = name, IsActive = isActive, SellingPrice = 1m, CostPrice = 1m };
 

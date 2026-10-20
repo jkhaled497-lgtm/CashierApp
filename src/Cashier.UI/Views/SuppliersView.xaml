@@ -16,6 +16,7 @@
                     <TextBlock Text="إدارة الموردين" FontSize="24" FontWeight="SemiBold" />
                     <TextBlock Text="بيانات الموردين والمبالغ المستحقة وكشوف الحسابات" Foreground="{StaticResource SubtleBrush}" Margin="0,3,0,8" />
                     <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="بحث باسم المورد أو الهاتف" VerticalAlignment="Center" Margin="4" />
                         <TextBox Width="310" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" ToolTip="ابحث باسم المورد أو الهاتف أو البريد" />
                         <Button Content="بحث" Command="{Binding LoadCommand}" />
                     </StackPanel>
@@ -83,16 +84,20 @@
                     <Border Grid.Row="1" Margin="0,8,0,4" Padding="10" Background="{DynamicResource SurfaceBrush}"
                             CornerRadius="10" Visibility="{Binding HasSelectedSupplier, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <StackPanel>
-                            <TextBlock Text="تسجيل دفعة من إجمالي مستحق المورد" FontWeight="SemiBold" Margin="2,0,2,4" />
+                            <TextBlock Text="إضافة استحقاق أو سداد مستحق المورد" FontWeight="SemiBold" Margin="2,0,2,4" />
                             <WrapPanel>
+                                <TextBlock Text="طريقة الدفع" VerticalAlignment="Center" Margin="4" />
                                 <ComboBox Width="130" ItemsSource="{Binding PaymentMethods}" SelectedItem="{Binding BalancePaymentMethod}">
                                     <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource ArabicEnumConverter}}" /></DataTemplate></ComboBox.ItemTemplate>
                                 </ComboBox>
+                                <TextBlock Text="المبلغ" VerticalAlignment="Center" Margin="4" />
                                 <TextBox Width="135" Text="{Binding BalanceAmount, UpdateSourceTrigger=PropertyChanged}"
                                          ToolTip="قيمة الدفعة من إجمالي المستحق" />
+                                <TextBlock Text="ملاحظات" VerticalAlignment="Center" Margin="4" />
                                 <TextBox Width="190" Text="{Binding BalanceNote, UpdateSourceTrigger=PropertyChanged}"
                                          ToolTip="ملاحظات (اختياري)" />
-                                <Button Content="تسجيل الدفعة" Command="{Binding RegisterBalanceEntryCommand}"
+                                <Button Content="إضافة استحقاق" Command="{Binding RegisterBalanceChargeCommand}" />
+                                <Button Content="سداد الاستحقاق" Command="{Binding RegisterBalancePaymentCommand}"
                                         Background="{DynamicResource AccentBrush}" Foreground="White" />
                             </WrapPanel>
                         </StackPanel>

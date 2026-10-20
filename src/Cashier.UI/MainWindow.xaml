@@ -44,6 +44,16 @@
                         <TextBlock Text="مرحباً بك في نظام نقاط البيع" FontSize="30" FontWeight="Bold" />
                         <TextBlock Text="{Binding SignedInAs, StringFormat=المستخدم الحالي: {0}}"
                                    Foreground="{DynamicResource SubtleBrush}" FontSize="15" Margin="0,8,0,16" />
+                        <Button Click="LowStockAlert_OnClick" HorizontalAlignment="Stretch" Padding="14"
+                                Background="{DynamicResource AlertBrush}" Foreground="White"
+                                Visibility="{Binding HasLowStock, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <TextBlock Text="⚠ تنبيه: توجد منتجات وصلت إلى حد المخزون المنخفض" FontWeight="Bold" />
+                                <TextBlock Text="{Binding LowStockCount, StringFormat=  ({0})}" Margin="6,0,0,0" />
+                            </StackPanel>
+                        </Button>
+                        <TextBlock Text="{Binding LowStockStatus}" Foreground="{DynamicResource AlertBrush}"
+                                   Margin="0,0,0,12" TextWrapping="Wrap" />
                         <Border Background="{DynamicResource CardBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}"
                                 BorderThickness="1" CornerRadius="12" Padding="14" Margin="0,0,0,22"
                                 HorizontalAlignment="Right">
@@ -102,6 +112,9 @@
                             <Button Tag="التقارير" Click="NavigateToTab_OnClick" Padding="20" Margin="8">
                                 <StackPanel><TextBlock Text="التقارير" FontSize="20" FontWeight="Bold" /><TextBlock Text="المبيعات والأرباح والعملاء والموردون" Margin="0,7,0,0" /></StackPanel>
                             </Button>
+                            <Button Tag="الشيت اليومي" Click="NavigateToTab_OnClick" Padding="20" Margin="8">
+                                <StackPanel><TextBlock Text="الشيت اليومي" FontSize="20" FontWeight="Bold" /><TextBlock Text="مبيعات اليوم وحركات المخزن والعملاء والموردين" Margin="0,7,0,0" /></StackPanel>
+                            </Button>
                         </UniformGrid>
                     </StackPanel>
                 </ScrollViewer>
@@ -118,6 +131,7 @@
             <TabItem Header="المستخدمون" IsEnabled="{Binding CanManageUsers}"><views:UsersView DataContext="{Binding Users}" /></TabItem>
             <TabItem Header="الفواتير"><views:InvoiceLookupView DataContext="{Binding InvoiceLookup}" /></TabItem>
             <TabItem Header="التقارير"><views:ReportsView DataContext="{Binding Reports}" /></TabItem>
+            <TabItem Header="الشيت اليومي"><views:DailySheetView DataContext="{Binding DailySheet}" /></TabItem>
         </TabControl>
     </DockPanel>
 </ui:FluentWindow>

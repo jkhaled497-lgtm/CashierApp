@@ -21,6 +21,7 @@
                     <TextBlock Text="ابحث برقم الفاتورة أو اسم العميل أو رقم الهاتف، ثم اختر الفاتورة لعرض تفاصيلها."
                                Foreground="{DynamicResource SubtleBrush}" Margin="0,4,0,10" />
                     <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="رقم الفاتورة أو العميل أو الهاتف" VerticalAlignment="Center" Margin="4" />
                         <TextBox Width="320" MaxLength="80"
                                  Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                                  ToolTip="رقم الفاتورة أو اسم العميل أو الهاتف"

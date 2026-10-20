@@ -62,6 +62,48 @@ public sealed class SupplierBalanceTests
     }
 
     [Fact]
+    public async Task CustomerBalance_TracksOpeningAndAddedChargesInLedger()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<CashierDbContext>().UseSqlite(connection).Options;
+        var factory = new TestContextFactory(options);
+        await using (var db = await factory.CreateDbContextAsync())
+            await db.Database.EnsureCreatedAsync();
+
+        var user = new UserAccount
+        {
+            Username = $"user-{Guid.NewGuid():N}"[..12],
+            PasswordHash = "test-hash",
+            Salt = "test-salt"
+        };
+        await using (var db = await factory.CreateDbContextAsync())
+        {
+            db.Users.Add(user);
+            await db.SaveChangesAsync();
+        }
+
+        var service = new CustomerService(factory);
+        var customer = await service.CreateAsync(new Customer
+        {
+            CustomerCode = string.Empty,
+            FullName = "عميل مستحق",
+            CurrentBalance = 75m
+        }, user.Id);
+        await service.RecordBalanceChargeAsync(customer.Id, 25m, user.Id, "مشتريات");
+
+        await using var verify = await factory.CreateDbContextAsync();
+        Assert.Equal(100m, (await verify.Customers.SingleAsync(item => item.Id == customer.Id)).CurrentBalance);
+        var ledger = await verify.CustomerLedgerEntries.OrderBy(item => item.Id).ToListAsync();
+        Assert.Equal(
+            [CustomerLedgerEntryType.BalanceCharge, CustomerLedgerEntryType.BalanceCharge],
+            ledger.Select(item => item.Type));
+        Assert.Equal([75m, 100m], ledger.Select(item => item.BalanceAfter));
+        Assert.Equal(user.Id, ledger[0].UserId);
+        Assert.Equal("مشتريات", ledger[1].Notes);
+    }
+
+    [Fact]
     public async Task AccountReports_SummarizeCurrentBalancesAndMovementsForSelectedPeriod()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");

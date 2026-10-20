@@ -77,10 +77,15 @@ Keep the production configuration outside the ZIP and never commit credentials t
 - Customer and employee CRUD screens; customer search, quick-add, account balances, customer payment ledger with invoice-linked balance settlement, loyalty point accrual, and walk-in fallback.
 - Product, category, brand, and supplier CRUD; locally selected product images; generated internal identifiers; barcode scanning and live product search/dropdown by name/barcode/brand/category. Product selling price must be at least cost; editing products also allows changing their active state. Cost prices are only shown to administrators.
 - Customer and supplier screens with side-by-side records and selected-account ledgers; supplier opening balances, additional charges, cash/card repayments, and retained paginated balance histories.
-- Inventory adjustments with employee attribution and history; sale-time stock validation, deduction, and stock-out audit records.
+- Separate warehouse and shop balances per product. New products accept opening shop and warehouse quantities, recorded in the inventory history. The product list and POS show shop quantity only; the inventory screen shows both balances. Inventory movements are limited to adding stock to the warehouse or transferring it from the warehouse to the shop. Purchases add stock to the warehouse; sales validate and deduct shop stock only.
+- Daily sheet with four date-filtered tabs for non-invoice shop sales, warehouse movements, customer account movements, and supplier account movements. Editing a daily sale or warehouse movement applies the quantity difference to the related stock balance.
+- Daily journal report for a selected date, combining sales and purchase invoices, daily sales, warehouse entries/transfers, customer and supplier charges/payments, and expenses. Entries retain their notes or show an automatic description, with daily financial and quantity totals.
+- Date-range top-selling-products report with quantities sold and CSV export; voided and refunded invoices are excluded.
+- Expense entry and date-range reports/CSV export for receipts such as electricity and phone top-ups; expense records include date, amount, notes, and user attribution.
 - Paginated, refreshable management grids and reload-on-navigation data loading.
 - A post-login home dashboard for navigating application modules; shared Fluent colors with light/dark theme support.
-- POS with a searchable product dropdown (without product tiles, category pills, or paging controls), customer selection and quick-add, quantity controls, and selected-line discounts entered as currency amounts. Cash/card tender and customer-account settlement are supported; invoices retain cashier attribution and receipt printing. New sales are tax-free and do not require a cashier shift; legacy shift and tax records remain in the database.
+- POS with a searchable product dropdown (without product tiles, category pills, or paging controls), customer selection and quick-add, quantity controls, and selected-line discounts entered as currency amounts. Cash/card tender and customer-account settlement are supported; invoices retain cashier attribution and open a print-preview prompt after saving. New sales are tax-free and do not require a cashier shift; legacy shift and tax records remain in the database.
+- Product cost and cost/profit reports are restricted to administrator accounts.
 - WPF-UI Fluent windows with Mica backdrop, keyboard shortcuts, and 58/80-mm-style receipt page sizing.
 
 ## Reusable UI interactions

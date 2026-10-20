@@ -34,6 +34,16 @@ public sealed class ProductService(IDbContextFactory<CashierDbContext> contextFa
         return await query.OrderBy(x => x.Name).ThenBy(x => x.Id).ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Product>> GetLowStockProductsAsync(CancellationToken cancellationToken = default)
+    {
+        await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
+        return await db.Products.AsNoTracking()
+            .Where(product => product.IsActive && product.CurrentStock <= product.MinStockAlert)
+            .OrderBy(product => product.Name)
+            .ThenBy(product => product.Id)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<PageResult<Product>> SearchPageAsync(ProductSearch search, int pageNumber, int pageSize,
         bool includeInactive = false, CancellationToken cancellationToken = default)
     {
@@ -59,7 +69,8 @@ public sealed class ProductService(IDbContextFactory<CashierDbContext> contextFa
         ArgumentNullException.ThrowIfNull(product);
         if (string.IsNullOrWhiteSpace(product.Name))
             throw new ArgumentException("اسم المنتج مطلوب.");
-        if (product.CostPrice < 0 || product.SellingPrice < 0 || product.CurrentStock < 0 || product.MinStockAlert < 0)
+        if (product.CostPrice < 0 || product.SellingPrice < 0 || product.CurrentStock < 0 ||
+            product.WarehouseStock < 0 || product.MinStockAlert < 0)
             throw new ArgumentOutOfRangeException(nameof(product), "يجب ألا تكون الأسعار أو قيم المخزون سالبة.");
         if (product.SellingPrice < product.CostPrice)
             throw new ArgumentException("يجب أن يكون سعر البيع أكبر من أو يساوي سعر التكلفة.");
@@ -85,7 +96,15 @@ public sealed class ProductService(IDbContextFactory<CashierDbContext> contextFa
                     Product = product,
                     Type = StockAdjustmentType.StockIn,
                     Quantity = product.CurrentStock,
-                    Reason = "رصيد افتتاحي للمنتج"
+                    Reason = "رصيد افتتاحي للمحل"
+                });
+            if (product.WarehouseStock > 0)
+                db.StockAdjustments.Add(new StockAdjustment
+                {
+                    Product = product,
+                    Type = StockAdjustmentType.WarehouseIn,
+                    Quantity = product.WarehouseStock,
+                    Reason = "رصيد افتتاحي للمخزن"
                 });
         }
 
@@ -93,7 +112,6 @@ public sealed class ProductService(IDbContextFactory<CashierDbContext> contextFa
         {
             var existing = await db.Products.SingleOrDefaultAsync(x => x.Id == product.Id, cancellationToken)
                 ?? throw new KeyNotFoundException("المنتج غير موجود.");
-            var stockDifference = product.CurrentStock - existing.CurrentStock;
             existing.Sku = product.Sku.Trim();
             existing.Barcode = string.IsNullOrWhiteSpace(product.Barcode) ? null : product.Barcode.Trim();
             existing.Name = product.Name.Trim();
@@ -103,19 +121,10 @@ public sealed class ProductService(IDbContextFactory<CashierDbContext> contextFa
             existing.CostPrice = product.CostPrice;
             existing.SellingPrice = product.SellingPrice;
             existing.MinStockAlert = product.MinStockAlert;
-            existing.CurrentStock = product.CurrentStock;
             existing.TaxRate = product.TaxRate;
             existing.Unit = product.Unit;
             existing.ImagePath = product.ImagePath;
             existing.IsActive = product.IsActive;
-            if (stockDifference != 0)
-                db.StockAdjustments.Add(new StockAdjustment
-                {
-                    ProductId = existing.Id,
-                    Type = stockDifference > 0 ? StockAdjustmentType.StockIn : StockAdjustmentType.StockOut,
-                    Quantity = Math.Abs(stockDifference),
-                    Reason = "تعديل الرصيد من شاشة المنتجات"
-                });
         }
         await db.SaveChangesAsync(cancellationToken);
     }

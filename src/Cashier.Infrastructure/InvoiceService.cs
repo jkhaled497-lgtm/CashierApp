@@ -224,23 +224,34 @@ public sealed class InvoiceService(IDbContextFactory<CashierDbContext> contextFa
             throw new ArgumentOutOfRangeException(nameof(to), "تاريخ النهاية يجب أن يكون بعد تاريخ البداية.");
 
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
-        var invoices = await db.Invoices.AsNoTracking()
-            .Where(x => x.CreatedAt >= from && x.CreatedAt < to)
+        var invoiceQuery = db.Invoices.AsNoTracking()
             .Where(x => x.Status != InvoiceStatus.Void && x.Status != InvoiceStatus.Refunded)
-            .Include(x => x.Items)
-            .ToListAsync(cancellationToken);
-        var payments = await db.Payments.AsNoTracking()
-            .Where(x => x.CreatedAt >= from && x.CreatedAt < to)
+            .Include(x => x.Items);
+        var invoices = IsSqlite(db)
+            ? (await invoiceQuery.ToListAsync(cancellationToken))
+                .Where(x => x.CreatedAt >= from && x.CreatedAt < to).ToList()
+            : await invoiceQuery.Where(x => x.CreatedAt >= from && x.CreatedAt < to)
+                .ToListAsync(cancellationToken);
+        var paymentQuery = db.Payments.AsNoTracking()
             .Where(x => x.Invoice.Status != InvoiceStatus.Void && x.Invoice.Status != InvoiceStatus.Refunded)
             .Where(x => x.Method == PaymentMethod.Cash ||
                         x.Method == PaymentMethod.DebitCard ||
                         x.Method == PaymentMethod.CreditCard)
-            .Select(x => new { x.CreatedAt, x.Method, x.Amount })
-            .ToListAsync(cancellationToken);
-        var balanceCharges = await db.CustomerLedgerEntries.AsNoTracking()
-            .Where(x => x.Type == CustomerLedgerEntryType.InvoiceCharge && x.CreatedAt >= from && x.CreatedAt < to)
-            .Select(x => new { x.CreatedAt, x.Amount })
-            .ToListAsync(cancellationToken);
+            .Select(x => new { x.CreatedAt, x.Method, x.Amount });
+        var payments = IsSqlite(db)
+            ? (await paymentQuery.ToListAsync(cancellationToken))
+                .Where(x => x.CreatedAt >= from && x.CreatedAt < to).ToList()
+            : await paymentQuery.Where(x => x.CreatedAt >= from && x.CreatedAt < to)
+                .ToListAsync(cancellationToken);
+        var balanceQuery = db.CustomerLedgerEntries.AsNoTracking()
+            .Where(x => x.Type == CustomerLedgerEntryType.InvoiceCharge ||
+                        x.Type == CustomerLedgerEntryType.BalanceCharge)
+            .Select(x => new { x.CreatedAt, x.Amount });
+        var balanceCharges = IsSqlite(db)
+            ? (await balanceQuery.ToListAsync(cancellationToken))
+                .Where(x => x.CreatedAt >= from && x.CreatedAt < to).ToList()
+            : await balanceQuery.Where(x => x.CreatedAt >= from && x.CreatedAt < to)
+                .ToListAsync(cancellationToken);
 
         var salesByDate = invoices
             .GroupBy(x => BusinessTime.ToEgyptLocal(x.CreatedAt).Date)
@@ -259,22 +270,41 @@ public sealed class InvoiceService(IDbContextFactory<CashierDbContext> contextFa
             .GroupBy(x => BusinessTime.ToEgyptLocal(x.CreatedAt).Date)
             .ToDictionary(day => day.Key, day => day.Sum(x => x.Amount));
 
-        return salesByDate.Keys.Concat(paymentsByDate.Keys).Concat(chargeByDate.Keys)
+        var dailySales = await LoadDailySalesAsync(db, from, to, cancellationToken);
+        var dailySalesByDate = dailySales
+            .GroupBy(sale => BusinessTime.ToEgyptLocal(sale.CreatedAt).Date)
+            .ToDictionary(day => day.Key, day => (
+                DailySaleCount: day.Count(),
+                SalesTotal: day.Sum(sale => Money((sale.UnitSellingPrice ?? sale.Product.SellingPrice) * sale.Quantity)),
+                CostTotal: day.Sum(sale => Money((sale.UnitCostPrice ?? sale.Product.CostPrice) * sale.Quantity))));
+        var dailyPaymentsByDate = dailySales
+            .GroupBy(sale => BusinessTime.ToEgyptLocal(sale.CreatedAt).Date)
+            .ToDictionary(day => day.Key, day => (
+                Cash: day.Where(sale => sale.PaymentMethod == PaymentMethod.Cash).Sum(sale => sale.AmountPaid),
+                Card: day.Where(sale => sale.PaymentMethod is PaymentMethod.DebitCard or PaymentMethod.CreditCard)
+                    .Sum(sale => sale.AmountPaid)));
+
+        return salesByDate.Keys.Concat(dailySalesByDate.Keys).Concat(paymentsByDate.Keys).Concat(chargeByDate.Keys)
             .Distinct()
             .OrderBy(date => date)
             .Select(date =>
             {
                 var sales = salesByDate.GetValueOrDefault(date);
+                var daily = dailySalesByDate.GetValueOrDefault(date);
                 var paymentsForDate = paymentsByDate.GetValueOrDefault(date);
+                var dailyPayments = dailyPaymentsByDate.GetValueOrDefault(date);
+                var salesTotal = sales.SalesTotal + daily.SalesTotal;
+                var costTotal = sales.CostTotal + daily.CostTotal;
                 return new InvoiceDailyReport(
                     date,
                     sales.InvoiceCount,
-                    sales.SalesTotal,
-                    paymentsForDate.Cash,
-                    paymentsForDate.Card,
+                    salesTotal,
+                    paymentsForDate.Cash + dailyPayments.Cash,
+                    paymentsForDate.Card + dailyPayments.Card,
                     chargeByDate.GetValueOrDefault(date),
-                    sales.CostTotal,
-                    sales.ProfitTotal);
+                    costTotal,
+                    salesTotal - costTotal,
+                    daily.DailySaleCount);
             })
             .ToArray();
     }
@@ -286,24 +316,109 @@ public sealed class InvoiceService(IDbContextFactory<CashierDbContext> contextFa
             throw new ArgumentOutOfRangeException(nameof(to), "تاريخ النهاية يجب أن يكون بعد تاريخ البداية.");
 
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
-        var payments = await db.Payments.AsNoTracking()
-            .Where(x => x.CreatedAt >= from && x.CreatedAt < to)
+        var paymentQuery = db.Payments.AsNoTracking()
             .Where(x => x.Invoice.Status != InvoiceStatus.Void && x.Invoice.Status != InvoiceStatus.Refunded)
             .Where(x => x.Method == PaymentMethod.Cash ||
                         x.Method == PaymentMethod.DebitCard ||
                         x.Method == PaymentMethod.CreditCard)
-            .Select(x => new { x.CreatedAt, x.Method, x.Amount })
-            .ToListAsync(cancellationToken);
+            .Select(x => new { x.CreatedAt, x.Method, x.Amount });
+        var payments = IsSqlite(db)
+            ? (await paymentQuery.ToListAsync(cancellationToken))
+                .Where(x => x.CreatedAt >= from && x.CreatedAt < to).ToList()
+            : await paymentQuery.Where(x => x.CreatedAt >= from && x.CreatedAt < to)
+                .ToListAsync(cancellationToken);
 
-        return payments
+        var dailySales = await LoadDailySalesAsync(db, from, to, cancellationToken);
+        var dailyByDate = dailySales
+            .GroupBy(sale => BusinessTime.ToEgyptLocal(sale.CreatedAt).Date)
+            .ToDictionary(day => day.Key, day => (
+                Cash: day.Where(sale => sale.PaymentMethod == PaymentMethod.Cash).Sum(sale => sale.AmountPaid),
+                Card: day.Where(sale => sale.PaymentMethod is PaymentMethod.DebitCard or PaymentMethod.CreditCard)
+                    .Sum(sale => sale.AmountPaid)));
+        var invoiceByDate = payments
             .GroupBy(x => BusinessTime.ToEgyptLocal(x.CreatedAt).Date)
-            .Select(day => new InvoiceRevenueReport(
-                day.Key,
-                day.Where(x => x.Method == PaymentMethod.Cash).Sum(x => x.Amount),
-                day.Where(x => x.Method is PaymentMethod.DebitCard or PaymentMethod.CreditCard).Sum(x => x.Amount)))
+            .ToDictionary(day => day.Key, day => (
+                Cash: day.Where(x => x.Method == PaymentMethod.Cash).Sum(x => x.Amount),
+                Card: day.Where(x => x.Method is PaymentMethod.DebitCard or PaymentMethod.CreditCard).Sum(x => x.Amount)));
+        return invoiceByDate.Keys.Concat(dailyByDate.Keys)
+            .Distinct()
+            .Select(date =>
+            {
+                var invoiceAmounts = invoiceByDate.GetValueOrDefault(date);
+                var dailyAmounts = dailyByDate.GetValueOrDefault(date);
+                return new InvoiceRevenueReport(
+                    date, invoiceAmounts.Cash + dailyAmounts.Cash, invoiceAmounts.Card + dailyAmounts.Card);
+            })
             .OrderBy(x => x.Date)
             .ToArray();
     }
+
+    public async Task<IReadOnlyList<TopSellingProductReport>> GetTopSellingProductsAsync(
+        DateTimeOffset? from = null,
+        DateTimeOffset? to = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (from is not null && to is not null && to <= from)
+            throw new ArgumentOutOfRangeException(nameof(to), "تاريخ النهاية يجب أن يكون بعد تاريخ البداية.");
+        await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
+        var invoiceQuery = db.Invoices.AsNoTracking()
+            .Where(invoice => invoice.Status != InvoiceStatus.Void && invoice.Status != InvoiceStatus.Refunded);
+        var filteredInvoiceQuery = invoiceQuery;
+        if (from is not null)
+            filteredInvoiceQuery = filteredInvoiceQuery.Where(invoice => invoice.CreatedAt >= from.Value);
+        if (to is not null)
+            filteredInvoiceQuery = filteredInvoiceQuery.Where(invoice => invoice.CreatedAt < to.Value);
+        var invoices = IsSqlite(db)
+            ? (await invoiceQuery.Include(invoice => invoice.Items).ToListAsync(cancellationToken))
+                .Where(invoice => (from is null || invoice.CreatedAt >= from.Value) &&
+                    (to is null || invoice.CreatedAt < to.Value)).ToList()
+            : await filteredInvoiceQuery.Include(invoice => invoice.Items).ToListAsync(cancellationToken);
+
+        var dailySales = await LoadDailySalesAsync(db, from, to, cancellationToken);
+        return invoices.SelectMany(invoice => invoice.Items)
+            .Select(line => new { line.ProductId, line.ProductName, line.Sku, line.Quantity })
+            .Concat(dailySales.Select(sale => new
+            {
+                sale.ProductId,
+                sale.ProductName,
+                sale.Sku,
+                Quantity = sale.Quantity
+            }))
+            .GroupBy(line => line.ProductId)
+            .Select(group => new TopSellingProductReport(
+                group.Key,
+                group.First().ProductName,
+                group.First().Sku,
+                group.Sum(line => line.Quantity)))
+            .OrderByDescending(report => report.QuantitySold)
+            .ThenBy(report => report.ProductName)
+            .ToArray();
+    }
+
+    private static async Task<List<DailyProduct>> LoadDailySalesAsync(
+        CashierDbContext db,
+        DateTimeOffset? from,
+        DateTimeOffset? to,
+        CancellationToken cancellationToken)
+    {
+        if (string.Equals(db.Database.ProviderName, "Microsoft.EntityFrameworkCore.Sqlite", StringComparison.Ordinal))
+        {
+            var allSales = await db.DailyProducts.AsNoTracking().Include(sale => sale.Product)
+                .ToListAsync(cancellationToken);
+            return allSales.Where(sale =>
+                (from is null || sale.CreatedAt >= from.Value) &&
+                (to is null || sale.CreatedAt < to.Value)).ToList();
+        }
+        var query = db.DailyProducts.AsNoTracking().Include(sale => sale.Product).AsQueryable();
+        if (from is not null)
+            query = query.Where(sale => sale.CreatedAt >= from.Value);
+        if (to is not null)
+            query = query.Where(sale => sale.CreatedAt < to.Value);
+        return await query.ToListAsync(cancellationToken);
+    }
+
+    private static bool IsSqlite(CashierDbContext db) =>
+        string.Equals(db.Database.ProviderName, "Microsoft.EntityFrameworkCore.Sqlite", StringComparison.Ordinal);
 
     private static decimal Money(decimal amount) => Math.Round(amount, 2, MidpointRounding.AwayFromZero);
 }

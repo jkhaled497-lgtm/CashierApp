@@ -39,9 +39,16 @@ public sealed class CustomerService(IDbContextFactory<CashierDbContext> contextF
         return new PageResult<Customer>(items, pageNumber, pageSize, totalCount);
     }
 
-    public async Task<Customer> CreateAsync(Customer customer, CancellationToken cancellationToken = default)
+    public Task<Customer> CreateAsync(Customer customer, CancellationToken cancellationToken = default) =>
+        CreateAsync(customer, userId: null, cancellationToken: cancellationToken);
+
+    public async Task<Customer> CreateAsync(
+        Customer customer, int? userId, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(customer);
+        customer.CurrentBalance = decimal.Round(customer.CurrentBalance, 2, MidpointRounding.AwayFromZero);
+        if (customer.CurrentBalance < 0)
+            throw new ArgumentOutOfRangeException(nameof(customer), "المبلغ المستحق لا يمكن أن يكون سالباً.");
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         customer.FullName = string.IsNullOrWhiteSpace(customer.FullName) ? "عميل جديد" : customer.FullName.Trim();
@@ -49,6 +56,16 @@ public sealed class CustomerService(IDbContextFactory<CashierDbContext> contextF
         db.Customers.Add(customer);
         await db.SaveChangesAsync(cancellationToken);
         customer.CustomerCode = $"CUST-{customer.Id:0000}";
+        if (customer.CurrentBalance > 0)
+            db.CustomerLedgerEntries.Add(new CustomerLedgerEntry
+            {
+                CustomerId = customer.Id,
+                UserId = userId,
+                Type = CustomerLedgerEntryType.BalanceCharge,
+                Amount = customer.CurrentBalance,
+                BalanceAfter = customer.CurrentBalance,
+                Notes = "رصيد مستحق عند إضافة العميل"
+            });
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return customer;
@@ -126,13 +143,14 @@ public sealed class CustomerService(IDbContextFactory<CashierDbContext> contextF
         var movements = (await db.CustomerLedgerEntries.AsNoTracking()
             .ToListAsync(cancellationToken))
             .Where(entry => entry.CreatedAt >= from && entry.CreatedAt < to &&
-                (entry.Type == CustomerLedgerEntryType.InvoiceCharge ||
+                (entry.Type is CustomerLedgerEntryType.InvoiceCharge or CustomerLedgerEntryType.BalanceCharge ||
                  entry.Type == CustomerLedgerEntryType.BalancePayment))
             .Select(entry => new { entry.CustomerId, entry.Type, entry.Amount })
             .ToList();
         var movementsByCustomer = movements.GroupBy(entry => entry.CustomerId)
             .ToDictionary(group => group.Key, group => (
-                Charges: group.Where(entry => entry.Type == CustomerLedgerEntryType.InvoiceCharge).Sum(entry => entry.Amount),
+                Charges: group.Where(entry => entry.Type is CustomerLedgerEntryType.InvoiceCharge or CustomerLedgerEntryType.BalanceCharge)
+                    .Sum(entry => entry.Amount),
                 Payments: group.Where(entry => entry.Type == CustomerLedgerEntryType.BalancePayment).Sum(entry => entry.Amount)));
         return accounts.Select(account =>
         {
@@ -201,6 +219,33 @@ public sealed class CustomerService(IDbContextFactory<CashierDbContext> contextF
                 Notes = string.IsNullOrWhiteSpace(note) ? "سداد رصيد العميل" : note.Trim()
             });
         }
+        await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return customer;
+    }
+
+    public async Task<Customer> RecordBalanceChargeAsync(
+        int customerId, decimal amount, int userId, string? note, CancellationToken cancellationToken = default)
+    {
+        amount = decimal.Round(amount, 2, MidpointRounding.AwayFromZero);
+        if (amount <= 0)
+            throw new ArgumentOutOfRangeException(nameof(amount), "يجب أن يكون مبلغ الاستحقاق أكبر من صفر.");
+        await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        var customer = await db.Customers.SingleOrDefaultAsync(
+            item => item.Id == customerId && item.IsActive && !item.IsWalkIn, cancellationToken)
+            ?? throw new KeyNotFoundException("العميل غير موجود أو غير مفعل.");
+        customer.CurrentBalance = decimal.Round(
+            customer.CurrentBalance + amount, 2, MidpointRounding.AwayFromZero);
+        db.CustomerLedgerEntries.Add(new CustomerLedgerEntry
+        {
+            Customer = customer,
+            UserId = userId,
+            Type = CustomerLedgerEntryType.BalanceCharge,
+            Amount = amount,
+            BalanceAfter = customer.CurrentBalance,
+            Notes = string.IsNullOrWhiteSpace(note) ? "إضافة استحقاق للعميل" : note.Trim()
+        });
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return customer;

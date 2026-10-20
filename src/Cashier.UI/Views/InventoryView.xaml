@@ -7,18 +7,34 @@
         <Border Padding="16" Margin="0,0,0,12" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="12">
             <DockPanel>
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
-                    <ComboBox Width="200" ItemsSource="{Binding Products}" SelectedItem="{Binding SelectedProduct}" DisplayMemberPath="Name" />
+                    <TextBlock Text="المنتج" VerticalAlignment="Center" Margin="4" />
+                    <ComboBox Width="235" ItemsSource="{Binding Products}" SelectedItem="{Binding SelectedProduct}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                    <TextBlock Foreground="{StaticResource SubtleBrush}" FontSize="11">
+                                        <Run Text="الكمية بالمخزن: " /><Run Text="{Binding WarehouseStock, StringFormat={}{0:0.###}}" />
+                                    </TextBlock>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <TextBlock Text="نوع الحركة" VerticalAlignment="Center" Margin="4" />
                     <ComboBox Width="150" ItemsSource="{Binding Types}" SelectedItem="{Binding SelectedType}">
                         <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Converter={StaticResource ArabicEnumConverter}}" /></DataTemplate></ComboBox.ItemTemplate>
                     </ComboBox>
+                    <TextBlock Text="الكمية" VerticalAlignment="Center" Margin="4" />
                     <TextBox Width="95" Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" ToolTip="الكمية" />
+                    <TextBlock Text="السبب أو الملاحظات" VerticalAlignment="Center" Margin="4" />
                     <TextBox Width="200" Text="{Binding Reason, UpdateSourceTrigger=PropertyChanged}" ToolTip="السبب أو الملاحظات" />
                     <Button Content="تسجيل الحركة" Command="{Binding AdjustCommand}" Background="{DynamicResource AccentBrush}" Foreground="White"
                             IsEnabled="{Binding CanAdjust}" />
                 </StackPanel>
                 <StackPanel VerticalAlignment="Center">
                     <TextBlock Text="إدارة المخزون" FontSize="22" FontWeight="SemiBold" />
-                    <TextBlock Text="تسجيل ومراجعة حركات المخزون مع سبب الحركة." Foreground="{StaticResource SubtleBrush}" Margin="0,3,0,0" />
+                    <TextBlock Text="أضف الكميات إلى المخزن أو أخرج الكميات منه."
+                               Foreground="{StaticResource SubtleBrush}" Margin="0,3,0,0" />
                 </StackPanel>
             </DockPanel>
         </Border>
@@ -27,6 +43,8 @@
             <DataGrid.Columns>
                 <DataGridTextColumn Header="التاريخ" Binding="{Binding CreatedAt, Converter={StaticResource EgyptDateTimeConverter}}" Width="200" />
                 <DataGridTextColumn Header="المنتج" Binding="{Binding Product.Name}" Width="*" />
+                <DataGridTextColumn Header="رصيد المخزن الحالي بعد آخر حركة"
+                                    Binding="{Binding Product.WarehouseStock, StringFormat={}{0:0.###}}" Width="220" />
                 <DataGridTextColumn Header="نوع الحركة" Binding="{Binding Type, Converter={StaticResource ArabicEnumConverter}}" Width="120" />
                 <DataGridTextColumn Header="الكمية" Binding="{Binding Quantity}" Width="110" />
                 <DataGridTextColumn Header="الموظف" Binding="{Binding Employee.FullName}" Width="180" />

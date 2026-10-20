@@ -18,6 +18,9 @@ public static class InfrastructureRegistration
         services.AddScoped<IShiftService, ShiftService>();
         services.AddScoped<IMasterDataService, MasterDataService>();
         services.AddScoped<IStockAdjustmentService, StockAdjustmentService>();
+        services.AddScoped<IDailySheetService, DailySheetService>();
+        services.AddScoped<IDailyJournalReportService, DailyJournalReportService>();
+        services.AddScoped<IExpenseService, ExpenseService>();
         services.AddScoped<IInvoiceService, InvoiceService>();
         services.AddScoped<ISupplierService, SupplierService>();
         services.AddScoped<IPurchaseInvoiceService, PurchaseInvoiceService>();

@@ -12,6 +12,7 @@
                     <TextBlock Text="إدارة المنتجات" FontSize="23" FontWeight="SemiBold" />
                     <TextBlock Text="اختر منتجاً من الجدول لعرض تفاصيله وتعديل بياناته." Foreground="{StaticResource SubtleBrush}" Margin="0,4,0,8" />
                     <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="بحث بالاسم أو الرمز أو الباركود" VerticalAlignment="Center" Margin="4" />
                         <TextBox Width="330" Padding="10,6" VerticalContentAlignment="Center"
                                  Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                  ToolTip="ابحث بالاسم أو الرمز أو الباركود">
@@ -40,7 +41,7 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="اسم المنتج" Binding="{Binding Name}" Width="*" />
                             <DataGridTextColumn Header="سعر البيع" Binding="{Binding SellingPrice, StringFormat={}{0:N2}}" Width="110" />
-                            <DataGridTextColumn Header="المخزون" Binding="{Binding CurrentStock, StringFormat={}{0:0.###}}" Width="105" />
+                            <DataGridTextColumn Header="كمية المحل" Binding="{Binding CurrentStock, StringFormat={}{0:0.###}}" Width="105" />
                         </DataGrid.Columns>
                     </DataGrid>
                     <views:PaginationBar Grid.Row="1" Margin="0,7,0,0"
@@ -80,11 +81,11 @@
                                        Visibility="{Binding DataContext.CanManagePrices, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}" />
                             <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Selected.CostPrice, StringFormat={}{0:N2}}" Margin="0,9,0,0"
                                        Visibility="{Binding DataContext.CanManagePrices, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                            <TextBlock Grid.Row="6" Text="الكمية بالمخزون" Foreground="{StaticResource SubtleBrush}" Margin="0,9,0,0" />
+                            <TextBlock Grid.Row="6" Text="كمية المحل" Foreground="{StaticResource SubtleBrush}" Margin="0,9,0,0" />
                             <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding Selected.CurrentStock, StringFormat={}{0:0.###}}" Margin="0,9,0,0" />
                             <TextBlock Grid.Row="7" Text="الوحدة" Foreground="{StaticResource SubtleBrush}" Margin="0,9,0,0" />
                             <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding Selected.Unit, Converter={StaticResource ArabicEnumConverter}}" Margin="0,9,0,0" />
-                            <TextBlock Grid.Row="8" Text="حد تنبيه المخزون" Foreground="{StaticResource SubtleBrush}" Margin="0,9,0,0" />
+                            <TextBlock Grid.Row="8" Text="حد تنبيه كمية المحل" Foreground="{StaticResource SubtleBrush}" Margin="0,9,0,0" />
                             <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding Selected.MinStockAlert, StringFormat={}{0:0.###}}" Margin="0,9,0,0" />
                         </Grid>
                         <CheckBox Content="المنتج مفعل" IsChecked="{Binding Selected.IsActive}" IsEnabled="False" Margin="2,8" />

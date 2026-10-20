@@ -14,6 +14,8 @@ public sealed class CashierDbContext(DbContextOptions<CashierDbContext> options)
     public DbSet<SupplierBalanceEntry> SupplierBalanceEntries => Set<SupplierBalanceEntry>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<StockAdjustment> StockAdjustments => Set<StockAdjustment>();
+    public DbSet<DailyProduct> DailyProducts => Set<DailyProduct>();
+    public DbSet<BusinessExpense> Expenses => Set<BusinessExpense>();
     public DbSet<PurchaseInvoice> PurchaseInvoices => Set<PurchaseInvoice>();
     public DbSet<PurchaseInvoiceLine> PurchaseInvoiceLines => Set<PurchaseInvoiceLine>();
     public DbSet<PurchasePayment> PurchasePayments => Set<PurchasePayment>();
@@ -96,6 +98,7 @@ public sealed class CashierDbContext(DbContextOptions<CashierDbContext> options)
             entity.Property(x => x.SellingPrice).HasPrecision(18, 2);
             entity.Property(x => x.MinStockAlert).HasPrecision(18, 3);
             entity.Property(x => x.CurrentStock).HasPrecision(18, 3);
+            entity.Property(x => x.WarehouseStock).HasPrecision(18, 3);
             entity.Property(x => x.TaxRate).HasPrecision(6, 3);
             entity.HasOne(x => x.Category).WithMany(x => x.Products).HasForeignKey(x => x.CategoryId).OnDelete(DeleteBehavior.SetNull);
             entity.HasOne(x => x.Brand).WithMany(x => x.Products).HasForeignKey(x => x.BrandId).OnDelete(DeleteBehavior.SetNull);
@@ -106,6 +109,33 @@ public sealed class CashierDbContext(DbContextOptions<CashierDbContext> options)
             entity.Property(x => x.Quantity).HasPrecision(18, 3);
             entity.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(x => x.Employee).WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.SetNull);
+        });
+        modelBuilder.Entity<DailyProduct>(entity =>
+        {
+            entity.ToTable("DailyProduct");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.ProductName).HasMaxLength(180).IsRequired();
+            entity.Property(x => x.Sku).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.Quantity).HasPrecision(18, 3);
+            entity.Property(x => x.UnitSellingPrice).HasPrecision(18, 2);
+            entity.Property(x => x.UnitCostPrice).HasPrecision(18, 2);
+            entity.Property(x => x.AmountPaid).HasPrecision(18, 2);
+            entity.HasIndex(x => x.CreatedAt);
+            entity.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.Customer).WithMany().HasForeignKey(x => x.CustomerId)
+                .OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+        modelBuilder.Entity<BusinessExpense>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Title).HasMaxLength(180).IsRequired();
+            entity.Property(x => x.Amount).HasPrecision(18, 2);
+            entity.Property(x => x.Notes).HasMaxLength(512);
+            entity.HasIndex(x => x.CreatedAt);
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.SetNull);
         });
         modelBuilder.Entity<PurchaseInvoice>(entity =>
         {
