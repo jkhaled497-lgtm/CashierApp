@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <item>
-    <version>1.0.22.0</version>
-    <url>https://github.com/jkhaled497-lgtm/CashierApp/releases/download/v1.0.1/Cashier_v1.0.1.zip</url>
+    <version>1.0.4.0</version>
+    <url>https://github.com/jkhaled497-lgtm/CashierApp/releases/download/v1.0.4/Cashier_v1.0.4.zip</url>
     <changelog>https://github.com/jkhaled497-lgtm/CashierApp/releases</changelog>
     <mandatory>false</mandatory>
 </item>
