@@ -26,10 +26,16 @@ public sealed partial class DailySheetViewModel(
     public IReadOnlyList<PaymentMethod> PaymentMethods { get; } = [PaymentMethod.Cash, PaymentMethod.CreditCard];
     public decimal SaleTotal => SelectedProduct is null
         ? 0
-        : Math.Round(SelectedProduct.SellingPrice * SaleQuantity, 2, MidpointRounding.AwayFromZero);
-    public decimal SaleEffectiveAmountPaid => SaleAmountPaid ?? SaleTotal;
+        : Math.Round(SelectedProduct.SellingPrice * SaleQuantity - SaleDiscountAmount, 2, MidpointRounding.AwayFromZero);
+    public decimal SaleEffectiveAmountPaid => SaleAmountPaid;
     public decimal SaleRemaining => Math.Max(0, SaleTotal - SaleEffectiveAmountPaid);
-    public decimal EditedSaleTotal => SelectedDailyProduct?.TotalAmount ?? 0;
+    public decimal EditedSaleTotal => SelectedDailyProduct is null
+        ? 0
+        : Math.Round(
+            (SelectedDailyProduct.UnitSellingPrice ?? SelectedDailyProduct.Product.SellingPrice) *
+            EditedSaleQuantity - EditedSaleDiscountAmount,
+            2,
+            MidpointRounding.AwayFromZero);
     public decimal EditedSaleRemaining => SelectedDailyProduct is null
         ? 0
         : Math.Max(0, EditedSaleTotal - EditedSaleAmountPaid);
@@ -39,11 +45,13 @@ public sealed partial class DailySheetViewModel(
     [ObservableProperty] private DateTime selectedDate = DateTime.Today;
     [ObservableProperty] private Product? selectedProduct;
     [ObservableProperty] private decimal saleQuantity = 1;
-    [ObservableProperty] private decimal? saleAmountPaid;
+    [ObservableProperty] private decimal saleDiscountAmount;
+    [ObservableProperty] private decimal saleAmountPaid;
     [ObservableProperty] private PaymentMethod salePaymentMethod = PaymentMethod.Cash;
     [ObservableProperty] private Customer? saleCustomer;
     [ObservableProperty] private DailyProduct? selectedDailyProduct;
     [ObservableProperty] private decimal editedSaleQuantity = 1;
+    [ObservableProperty] private decimal editedSaleDiscountAmount;
     [ObservableProperty] private decimal editedSaleAmountPaid;
     [ObservableProperty] private PaymentMethod editedSalePaymentMethod = PaymentMethod.Cash;
     [ObservableProperty] private Customer? editedSaleCustomer;
@@ -65,6 +73,7 @@ public sealed partial class DailySheetViewModel(
     partial void OnSelectedDailyProductChanged(DailyProduct? value)
     {
         EditedSaleQuantity = value?.Quantity ?? 1;
+        EditedSaleDiscountAmount = value?.DiscountAmount ?? 0;
         EditedSaleAmountPaid = value?.AmountPaid ?? 0;
         EditedSalePaymentMethod = value?.PaymentMethod ?? PaymentMethod.Cash;
         EditedSaleCustomer = value?.CustomerId is { } id
@@ -76,8 +85,10 @@ public sealed partial class DailySheetViewModel(
 
     partial void OnSelectedProductChanged(Product? value) => NotifySaleAmounts();
     partial void OnSaleQuantityChanged(decimal value) => NotifySaleAmounts();
-    partial void OnSaleAmountPaidChanged(decimal? value) => NotifySaleAmounts();
+    partial void OnSaleDiscountAmountChanged(decimal value) => NotifySaleAmounts();
+    partial void OnSaleAmountPaidChanged(decimal value) => NotifySaleAmounts();
     partial void OnEditedSaleQuantityChanged(decimal value) => NotifyEditedSaleAmounts();
+    partial void OnEditedSaleDiscountAmountChanged(decimal value) => NotifyEditedSaleAmounts();
     partial void OnEditedSaleAmountPaidChanged(decimal value) => NotifyEditedSaleAmounts();
 
     partial void OnSelectedWarehouseMovementChanged(StockAdjustment? value)
@@ -159,10 +170,12 @@ public sealed partial class DailySheetViewModel(
                 SaleCustomer?.Id,
                 session.Current.UserId,
                 SaleAmountPaid,
-                SalePaymentMethod));
+                SalePaymentMethod,
+                SaleDiscountAmount));
             Status = "تم تسجيل البيع وخصم الكمية من رصيد المحل.";
             SaleQuantity = 1;
-            SaleAmountPaid = null;
+            SaleDiscountAmount = 0;
+            SaleAmountPaid = 0;
             await LoadAsync();
         }
         catch (Exception exception)
@@ -187,7 +200,8 @@ public sealed partial class DailySheetViewModel(
                 EditedSaleQuantity,
                 EditedSaleCustomer?.Id,
                 EditedSaleAmountPaid,
-                EditedSalePaymentMethod);
+                EditedSalePaymentMethod,
+                discountAmount: EditedSaleDiscountAmount);
             Status = "تم تعديل حركة البيع وتحديث رصيد المحل.";
             SelectedDailyProduct = null;
             await LoadAsync();
@@ -203,7 +217,7 @@ public sealed partial class DailySheetViewModel(
     {
         if (!CanManageWarehouse)
         {
-            Status = "حركات المخزن متاحة للمدير أو مدير النظام فقط.";
+            Status = "حركات المخزن متاحة لمدير النظام فقط.";
             return;
         }
         if (!IsCurrentSheetDate())
@@ -234,7 +248,7 @@ public sealed partial class DailySheetViewModel(
     {
         if (!CanManageWarehouse)
         {
-            Status = "تعديل حركات المخزن متاح للمدير أو مدير النظام فقط.";
+            Status = "تعديل حركات المخزن متاح لمدير النظام فقط.";
             return;
         }
         if (SelectedWarehouseMovement is null)
@@ -307,7 +321,7 @@ public sealed partial class DailySheetViewModel(
     {
         if (!CanManageSupplierAccounts)
         {
-            Status = "تسجيل حركات الموردين متاح للمدير أو مدير النظام فقط.";
+            Status = "تسجيل حركات الموردين متاح لمدير النظام فقط.";
             return;
         }
         if (!IsCurrentSheetDate())
@@ -335,7 +349,7 @@ public sealed partial class DailySheetViewModel(
     {
         if (!CanManageSupplierAccounts)
         {
-            Status = "تسجيل حركات الموردين متاح للمدير أو مدير النظام فقط.";
+            Status = "تسجيل حركات الموردين متاح لمدير النظام فقط.";
             return;
         }
         if (!IsCurrentSheetDate())

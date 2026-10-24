@@ -49,11 +49,14 @@
                             <TextBlock Text="الكمية المباعة" VerticalAlignment="Center" Margin="4" />
                             <TextBox Width="110" Margin="3" Text="{Binding SaleQuantity, UpdateSourceTrigger=PropertyChanged}"
                                      ToolTip="الكمية المباعة" />
+                            <TextBlock Text="خصم إجمالي الكمية" VerticalAlignment="Center" Margin="4" />
+                            <TextBox Width="90" Margin="3" Text="{Binding SaleDiscountAmount, UpdateSourceTrigger=PropertyChanged}"
+                                     ToolTip="مبلغ واحد يخصم من إجمالي الكمية المباعة" />
                             <TextBlock Text="الإجمالي" VerticalAlignment="Center" Margin="4" />
                             <TextBlock Text="{Binding SaleTotal, StringFormat={}{0:N2}}" VerticalAlignment="Center" Margin="3" />
-                            <TextBlock Text="المدفوع (فارغ = كامل)" VerticalAlignment="Center" Margin="4" />
+                            <TextBlock Text="المدفوع" VerticalAlignment="Center" Margin="4" />
                             <TextBox Width="110" Margin="3" Text="{Binding SaleAmountPaid, UpdateSourceTrigger=PropertyChanged}"
-                                     ToolTip="المبلغ المحصل؛ اتركه فارغاً لتحصيل كامل قيمة البيع" />
+                                     ToolTip="المبلغ المحصل؛ الافتراضي صفر" />
                             <TextBlock Text="طريقة التحصيل" VerticalAlignment="Center" Margin="4" />
                             <ComboBox Width="135" Margin="3" ItemsSource="{Binding PaymentMethods}"
                                       SelectedItem="{Binding SalePaymentMethod}">
@@ -79,6 +82,7 @@
                             <DataGridTextColumn Header="رمز المنتج" Binding="{Binding Sku}" Width="150" />
                             <DataGridTextColumn Header="المنتج" Binding="{Binding ProductName}" Width="*" />
                             <DataGridTextColumn Header="الكمية المباعة" Binding="{Binding Quantity, StringFormat={}{0:0.###}}" Width="140" />
+                            <DataGridTextColumn Header="الخصم" Binding="{Binding DiscountAmount, StringFormat={}{0:N2}}" Width="110" />
                             <DataGridTextColumn Header="الإجمالي" Binding="{Binding TotalAmount, StringFormat={}{0:N2}}" Width="120" />
                             <DataGridTextColumn Header="المدفوع" Binding="{Binding AmountPaid, StringFormat={}{0:N2}}" Width="120" />
                             <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat={}{0:N2}}" Width="120" />
@@ -93,6 +97,9 @@
                             <TextBlock Text="الكمية الجديدة" VerticalAlignment="Center" Margin="4" />
                             <TextBox Width="110" Margin="3" Text="{Binding EditedSaleQuantity, UpdateSourceTrigger=PropertyChanged}"
                                      ToolTip="الكمية الجديدة" />
+                            <TextBlock Text="خصم إجمالي الكمية" VerticalAlignment="Center" Margin="4" />
+                            <TextBox Width="90" Margin="3" Text="{Binding EditedSaleDiscountAmount, UpdateSourceTrigger=PropertyChanged}"
+                                     ToolTip="مبلغ واحد يخصم من إجمالي الكمية المباعة" />
                             <TextBlock Text="الإجمالي" VerticalAlignment="Center" Margin="4" />
                             <TextBlock Text="{Binding EditedSaleTotal, StringFormat={}{0:N2}}" VerticalAlignment="Center" Margin="3" />
                             <TextBlock Text="المدفوع" VerticalAlignment="Center" Margin="4" />

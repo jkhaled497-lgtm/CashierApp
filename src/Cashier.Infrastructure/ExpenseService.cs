@@ -52,8 +52,23 @@ public sealed class ExpenseService(IDbContextFactory<CashierDbContext> contextFa
             throw new ArgumentOutOfRangeException(nameof(from), "نطاق التاريخ غير صالح.");
 
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
-        return await db.Expenses.AsNoTracking()
+        var query = db.Expenses.AsNoTracking()
             .Include(expense => expense.User)
+            .AsQueryable();
+
+        if (string.Equals(
+                db.Database.ProviderName,
+                "Microsoft.EntityFrameworkCore.Sqlite",
+                StringComparison.Ordinal))
+        {
+            return (await query.ToListAsync(cancellationToken))
+                .Where(expense => expense.CreatedAt >= from && expense.CreatedAt < to)
+                .OrderByDescending(expense => expense.CreatedAt)
+                .ThenByDescending(expense => expense.Id)
+                .ToArray();
+        }
+
+        return await query
             .Where(expense => expense.CreatedAt >= from && expense.CreatedAt < to)
             .OrderByDescending(expense => expense.CreatedAt)
             .ThenByDescending(expense => expense.Id)

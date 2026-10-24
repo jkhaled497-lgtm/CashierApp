@@ -6,10 +6,11 @@ namespace Cashier.Infrastructure;
 
 public static class InfrastructureRegistration
 {
-    public static IServiceCollection AddCashierInfrastructure(this IServiceCollection services, string connectionString)
+    public static IServiceCollection AddCashierInfrastructure(this IServiceCollection services, string databasePath)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
-        services.AddDbContextFactory<CashierDbContext>(options => options.UseSqlServer(connectionString));
+        ArgumentException.ThrowIfNullOrWhiteSpace(databasePath);
+        services.AddDbContextFactory<CashierDbContext>(options =>
+            options.UseSqlite($"Data Source={databasePath}"));
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<ICustomerService, CustomerService>();

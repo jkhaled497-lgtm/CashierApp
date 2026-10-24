@@ -119,6 +119,7 @@ public sealed class CashierDbContext(DbContextOptions<CashierDbContext> options)
             entity.Property(x => x.Quantity).HasPrecision(18, 3);
             entity.Property(x => x.UnitSellingPrice).HasPrecision(18, 2);
             entity.Property(x => x.UnitCostPrice).HasPrecision(18, 2);
+            entity.Property(x => x.DiscountAmount).HasPrecision(18, 2);
             entity.Property(x => x.AmountPaid).HasPrecision(18, 2);
             entity.HasIndex(x => x.CreatedAt);
             entity.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId)

@@ -54,6 +54,25 @@
                         </Button>
                         <TextBlock Text="{Binding LowStockStatus}" Foreground="{DynamicResource AlertBrush}"
                                    Margin="0,0,0,12" TextWrapping="Wrap" />
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
+                            <Button Content="نسخ احتياطي الآن"
+                                    Command="{Binding BackupNowCommand}"
+                                    IsEnabled="{Binding CanManageUsers}"
+                                    Padding="16,10"
+                                    Background="{DynamicResource AccentBrush}"
+                                    Foreground="White" />
+                            <ProgressBar IsIndeterminate="True"
+                                         Width="90"
+                                         Height="4"
+                                         Margin="10,0,0,0"
+                                         VerticalAlignment="Center"
+                                         Visibility="{Binding IsBackupInProgress, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            <TextBlock Text="{Binding BackupStatus}"
+                                       Margin="12,0,0,0"
+                                       VerticalAlignment="Center"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource SubtleBrush}" />
+                        </StackPanel>
                         <Border Background="{DynamicResource CardBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}"
                                 BorderThickness="1" CornerRadius="12" Padding="14" Margin="0,0,0,22"
                                 HorizontalAlignment="Right">
@@ -79,38 +98,38 @@
                                     Background="{DynamicResource AccentBrush}" Foreground="White">
                                 <StackPanel><TextBlock Text="نقطة البيع" FontSize="20" FontWeight="Bold" /><TextBlock Text="إنشاء فاتورة وإتمام عملية البيع" Margin="0,7,0,0" /></StackPanel>
                             </Button>
-                            <Button Tag="المنتجات" Click="NavigateToTab_OnClick" IsEnabled="{Binding CanManageAdministration}" Padding="20" Margin="8">
-                                <StackPanel><TextBlock Text="المنتجات" FontSize="20" FontWeight="Bold" /><TextBlock Text="الكتالوج والأسعار والمخزون" Margin="0,7,0,0" /></StackPanel>
+                            <Button Tag="المنتجات" Click="NavigateToTab_OnClick" Padding="20" Margin="8">
+                                <StackPanel><TextBlock Text="المنتجات" FontSize="20" FontWeight="Bold" /><TextBlock Text="عرض المنتجات وأسعار البيع والمخزون" Margin="0,7,0,0" /></StackPanel>
                             </Button>
-                            <Button Tag="العملاء" Click="NavigateToTab_OnClick" Padding="20" Margin="8">
+                            <Button Tag="العملاء" Click="NavigateToTab_OnClick" Visibility="{Binding CanManageAdministration, Converter={StaticResource BooleanToVisibilityConverter}}" Padding="20" Margin="8">
                                 <StackPanel><TextBlock Text="العملاء" FontSize="20" FontWeight="Bold" /><TextBlock Text="الملفات والأرصدة وكشوف الحساب" Margin="0,7,0,0" /></StackPanel>
                             </Button>
-                            <Button Tag="الموردون" Click="NavigateToTab_OnClick" IsEnabled="{Binding CanManageAdministration}" Padding="20" Margin="8">
+                            <Button Tag="الموردون" Click="NavigateToTab_OnClick" Visibility="{Binding CanManageAdministration, Converter={StaticResource BooleanToVisibilityConverter}}" Padding="20" Margin="8">
                                 <StackPanel><TextBlock Text="الموردون" FontSize="20" FontWeight="Bold" /><TextBlock Text="الموردون والمستحقات المالية" Margin="0,7,0,0" /></StackPanel>
                             </Button>
-                            <Button Tag="الموظفون" Click="NavigateToTab_OnClick" IsEnabled="{Binding CanManageAdministration}" Padding="20" Margin="8">
+                            <Button Tag="الموظفون" Click="NavigateToTab_OnClick" Visibility="{Binding CanManageAdministration, Converter={StaticResource BooleanToVisibilityConverter}}" Padding="20" Margin="8">
                                 <StackPanel><TextBlock Text="الموظفون" FontSize="20" FontWeight="Bold" /><TextBlock Text="بيانات الموظفين وإدارتهم" Margin="0,7,0,0" /></StackPanel>
                             </Button>
-                            <Button Tag="الفئات والعلامات التجارية" Click="NavigateToTab_OnClick" IsEnabled="{Binding CanManageAdministration}" Padding="20" Margin="8">
+                            <Button Tag="الفئات والعلامات التجارية" Click="NavigateToTab_OnClick" Visibility="{Binding CanManageAdministration, Converter={StaticResource BooleanToVisibilityConverter}}" Padding="20" Margin="8">
                                 <StackPanel><TextBlock Text="الفئات والعلامات التجارية" FontSize="20" FontWeight="Bold" /><TextBlock Text="إدارة بيانات التصنيف والعلامات" Margin="0,7,0,0" /></StackPanel>
                             </Button>
-                            <Button Tag="المخزون" Click="NavigateToTab_OnClick" IsEnabled="{Binding CanManageAdministration}" Padding="20" Margin="8">
+                            <Button Tag="المخزون" Click="NavigateToTab_OnClick" Visibility="{Binding CanManageAdministration, Converter={StaticResource BooleanToVisibilityConverter}}" Padding="20" Margin="8">
                                 <StackPanel><TextBlock Text="المخزون" FontSize="20" FontWeight="Bold" /><TextBlock Text="حركات المخزون والتسويات" Margin="0,7,0,0" /></StackPanel>
                             </Button>
-                            <Button Tag="المستخدمون" Click="NavigateToTab_OnClick" IsEnabled="{Binding CanManageUsers}" Padding="20" Margin="8">
+                            <Button Tag="المستخدمون" Click="NavigateToTab_OnClick" Visibility="{Binding CanManageUsers, Converter={StaticResource BooleanToVisibilityConverter}}" Padding="20" Margin="8">
                                 <StackPanel><TextBlock Text="المستخدمون" FontSize="20" FontWeight="Bold" /><TextBlock Text="الحسابات والصلاحيات" Margin="0,7,0,0" /></StackPanel>
                             </Button>
-                            <Button Tag="الفواتير" Click="NavigateToTab_OnClick" Padding="20" Margin="8">
+                            <Button Tag="الفواتير" Click="NavigateToTab_OnClick" Visibility="{Binding CanManageAdministration, Converter={StaticResource BooleanToVisibilityConverter}}" Padding="20" Margin="8">
                                 <StackPanel><TextBlock Text="الفواتير" FontSize="20" FontWeight="Bold" /><TextBlock Text="البحث عن فاتورة ومراجعة تفاصيلها" Margin="0,7,0,0" /></StackPanel>
                             </Button>
-                            <Button Tag="فاتورة شراء" Click="NavigateToTab_OnClick" IsEnabled="{Binding CanManageAdministration}" Padding="20" Margin="8">
+                            <Button Tag="فاتورة شراء" Click="NavigateToTab_OnClick" Padding="20" Margin="8">
                                 <StackPanel><TextBlock Text="فاتورة شراء" FontSize="20" FontWeight="Bold" /><TextBlock Text="تسجيل مشتريات الموردين والمدفوعات" Margin="0,7,0,0" /></StackPanel>
                             </Button>
-                            <Button Tag="فواتير الشراء" Click="NavigateToTab_OnClick" IsEnabled="{Binding CanManageAdministration}" Padding="20" Margin="8">
+                            <Button Tag="فواتير الشراء" Click="NavigateToTab_OnClick" Padding="20" Margin="8">
                                 <StackPanel><TextBlock Text="فواتير الشراء" FontSize="20" FontWeight="Bold" /><TextBlock Text="عرض وطباعة فواتير الموردين" Margin="0,7,0,0" /></StackPanel>
                             </Button>
                             <Button Tag="التقارير" Click="NavigateToTab_OnClick" Padding="20" Margin="8">
-                                <StackPanel><TextBlock Text="التقارير" FontSize="20" FontWeight="Bold" /><TextBlock Text="المبيعات والأرباح والعملاء والموردون" Margin="0,7,0,0" /></StackPanel>
+                                <StackPanel><TextBlock Text="التقارير" FontSize="20" FontWeight="Bold" /><TextBlock Text="المبيعات والإيرادات وأرصدة العملاء والموردين" Margin="0,7,0,0" /></StackPanel>
                             </Button>
                             <Button Tag="الشيت اليومي" Click="NavigateToTab_OnClick" Padding="20" Margin="8">
                                 <StackPanel><TextBlock Text="الشيت اليومي" FontSize="20" FontWeight="Bold" /><TextBlock Text="مبيعات اليوم وحركات المخزن والعملاء والموردين" Margin="0,7,0,0" /></StackPanel>
@@ -120,16 +139,16 @@
                 </ScrollViewer>
             </TabItem>
             <TabItem Header="نقطة البيع"><views:CashierView DataContext="{Binding Cashier}" /></TabItem>
-            <TabItem Header="المنتجات" IsEnabled="{Binding CanManageAdministration}"><views:ProductsView DataContext="{Binding Products}" /></TabItem>
-            <TabItem Header="العملاء"><views:CustomersView DataContext="{Binding Customers}" /></TabItem>
-            <TabItem Header="الموردون" IsEnabled="{Binding CanManageAdministration}"><views:SuppliersView DataContext="{Binding Suppliers}" /></TabItem>
-            <TabItem Header="فاتورة شراء" IsEnabled="{Binding CanManageAdministration}"><views:PurchaseEntryView DataContext="{Binding PurchaseEntry}" /></TabItem>
-            <TabItem Header="فواتير الشراء" IsEnabled="{Binding CanManageAdministration}"><views:PurchaseInvoicesView DataContext="{Binding PurchaseInvoices}" /></TabItem>
-            <TabItem Header="الموظفون" IsEnabled="{Binding CanManageAdministration}"><views:EmployeesView DataContext="{Binding Employees}" /></TabItem>
-            <TabItem Header="الفئات والعلامات التجارية" IsEnabled="{Binding CanManageAdministration}"><views:MasterDataView DataContext="{Binding MasterData}" /></TabItem>
-            <TabItem Header="المخزون" IsEnabled="{Binding CanManageAdministration}"><views:InventoryView DataContext="{Binding Inventory}" /></TabItem>
-            <TabItem Header="المستخدمون" IsEnabled="{Binding CanManageUsers}"><views:UsersView DataContext="{Binding Users}" /></TabItem>
-            <TabItem Header="الفواتير"><views:InvoiceLookupView DataContext="{Binding InvoiceLookup}" /></TabItem>
+            <TabItem Header="المنتجات"><views:ProductsView DataContext="{Binding Products}" /></TabItem>
+            <TabItem Header="العملاء" Visibility="{Binding CanManageAdministration, Converter={StaticResource BooleanToVisibilityConverter}}"><views:CustomersView DataContext="{Binding Customers}" /></TabItem>
+            <TabItem Header="الموردون" Visibility="{Binding CanManageAdministration, Converter={StaticResource BooleanToVisibilityConverter}}"><views:SuppliersView DataContext="{Binding Suppliers}" /></TabItem>
+            <TabItem Header="فاتورة شراء"><views:PurchaseEntryView DataContext="{Binding PurchaseEntry}" /></TabItem>
+            <TabItem Header="فواتير الشراء"><views:PurchaseInvoicesView DataContext="{Binding PurchaseInvoices}" /></TabItem>
+            <TabItem Header="الموظفون" Visibility="{Binding CanManageAdministration, Converter={StaticResource BooleanToVisibilityConverter}}"><views:EmployeesView DataContext="{Binding Employees}" /></TabItem>
+            <TabItem Header="الفئات والعلامات التجارية" Visibility="{Binding CanManageAdministration, Converter={StaticResource BooleanToVisibilityConverter}}"><views:MasterDataView DataContext="{Binding MasterData}" /></TabItem>
+            <TabItem Header="المخزون" Visibility="{Binding CanManageAdministration, Converter={StaticResource BooleanToVisibilityConverter}}"><views:InventoryView DataContext="{Binding Inventory}" /></TabItem>
+            <TabItem Header="المستخدمون" Visibility="{Binding CanManageUsers, Converter={StaticResource BooleanToVisibilityConverter}}"><views:UsersView DataContext="{Binding Users}" /></TabItem>
+            <TabItem Header="الفواتير" Visibility="{Binding CanManageAdministration, Converter={StaticResource BooleanToVisibilityConverter}}"><views:InvoiceLookupView DataContext="{Binding InvoiceLookup}" /></TabItem>
             <TabItem Header="التقارير"><views:ReportsView DataContext="{Binding Reports}" /></TabItem>
             <TabItem Header="الشيت اليومي"><views:DailySheetView DataContext="{Binding DailySheet}" /></TabItem>
         </TabControl>

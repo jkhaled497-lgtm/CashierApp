@@ -9,15 +9,18 @@
   <ItemGroup>
     <PackageReference Include="Autoupdater.NET.Official" Version="1.9.3" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Google.Apis.Drive.v3" Version="1.77.0.4301" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.22" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
     <PackageReference Include="WPF-UI" Version="3.0.5" />
     <PackageReference Include="ZXing.Net" Version="0.16.11" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="appsettings.json"
-          CopyToOutputDirectory="PreserveNewest"
-          CopyToPublishDirectory="Never" />
+    <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Update="google-credentials.json" Condition="Exists('google-credentials.json')" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
+    <None Update="Backups\.gitkeep" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -28,5 +31,16 @@
     <UseWPF>true</UseWPF>
     <Version>1.0.6</Version>
   </PropertyGroup>
+
+  <Target Name="IncludeExistingBackupsInPublish" AfterTargets="Publish" Condition="'$(PublishDir)' != ''">
+    <MakeDir Directories="$(PublishDir)Backups" />
+    <ItemGroup>
+      <ExistingBackupsToPublish Include="$(MSBuildProjectDirectory)\bin\Debug\$(TargetFramework)\Backups\backup_*.db" />
+    </ItemGroup>
+    <Copy
+      SourceFiles="@(ExistingBackupsToPublish)"
+      DestinationFolder="$(PublishDir)Backups"
+      SkipUnchangedFiles="true" />
+  </Target>
 
 </Project>

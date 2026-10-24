@@ -75,7 +75,7 @@ public sealed class UserManagementService(IDbContextFactory<CashierDbContext> co
         {
             account.Salt = BCrypt.Net.BCrypt.GenerateSalt(12);
             account.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword, account.Salt);
-            account.PasswordChangeRequired = true;
+            account.PasswordChangeRequired = false;
         }
         await db.SaveChangesAsync(cancellationToken);
     }
@@ -95,11 +95,8 @@ public sealed class UserManagementService(IDbContextFactory<CashierDbContext> co
             throw new ArgumentException("يجب أن يتكون اسم المستخدم من 3 أحرف على الأقل.");
     }
 
-    private static void ValidatePassword(string password)
-    {
-        if (password.Length < 12)
-            throw new ArgumentException("يجب أن تتكون كلمة المرور من 12 حرفاً على الأقل.");
-    }
+    private static void ValidatePassword(string password) =>
+        ArgumentException.ThrowIfNullOrEmpty(password);
 
     private static void ValidatePage(int pageNumber, int pageSize)
     {

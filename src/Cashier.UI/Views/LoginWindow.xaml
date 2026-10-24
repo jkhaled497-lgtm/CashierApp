@@ -29,8 +29,28 @@
                 <TextBlock Text="اسم المستخدم" Margin="3,6,3,0" Foreground="{DynamicResource PrimaryTextBrush}" />
                 <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" />
                 <TextBlock Text="كلمة المرور" Margin="3,6,3,0" Foreground="{DynamicResource PrimaryTextBrush}" />
-                <PasswordBox x:Name="PasswordBox" Margin="3" Padding="10,8" MinHeight="36"
-                             PasswordChanged="PasswordBox_OnPasswordChanged" />
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <PasswordBox x:Name="PasswordBox" Grid.Column="0" Margin="3" Padding="10,8" MinHeight="36"
+                                 PasswordChanged="PasswordBox_OnPasswordChanged"
+                                 Visibility="{Binding IsPasswordVisible, Converter={StaticResource InverseBooleanToVisibilityConverter}}" />
+                    <TextBox x:Name="VisiblePasswordBox" Grid.Column="0" Margin="3" Padding="10,8" MinHeight="36"
+                             Text="{Binding Password, UpdateSourceTrigger=PropertyChanged}"
+                             Visibility="{Binding IsPasswordVisible, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                    <Button Grid.Column="1" Content="إظهار"
+                            Click="TogglePasswordVisibility_OnClick"
+                            Visibility="{Binding IsPasswordVisible, Converter={StaticResource InverseBooleanToVisibilityConverter}}"
+                            VerticalAlignment="Center" MinWidth="64" Padding="10,7" Margin="3"
+                            ToolTip="إظهار كلمة المرور" />
+                    <Button Grid.Column="1" Content="إخفاء"
+                            Click="TogglePasswordVisibility_OnClick"
+                            Visibility="{Binding IsPasswordVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            VerticalAlignment="Center" MinWidth="64" Padding="10,7" Margin="3"
+                            ToolTip="إخفاء كلمة المرور" />
+                </Grid>
                 <Button Content="تسجيل الدخول" Command="{Binding LoginCommand}"
                         Background="{DynamicResource AccentBrush}" Foreground="White" Margin="3,14,3,0" />
                 <TextBlock Text="{Binding CurrentVersion, StringFormat=الإصدار الحالي: {0}}"
@@ -41,17 +61,6 @@
                         التحقق من التحديثات وتثبيت أحدث إصدار
                     </Hyperlink>
                 </TextBlock>
-                <StackPanel Visibility="{Binding IsPasswordChangeRequired, Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <TextBlock Text="تغيير كلمة المرور الافتراضية" FontSize="18" FontWeight="SemiBold" Margin="3,18,3,4" Foreground="{DynamicResource PrimaryTextBrush}" />
-                    <TextBlock Text="كلمة مرور جديدة (12 حرفاً على الأقل)" Margin="3,4,3,0" Foreground="{DynamicResource PrimaryTextBrush}" />
-                    <PasswordBox x:Name="NewPasswordBox" Margin="3" Padding="10,8" MinHeight="36"
-                                 PasswordChanged="NewPasswordBox_OnPasswordChanged" />
-                    <TextBlock Text="تأكيد كلمة المرور الجديدة" Margin="3,4,3,0" Foreground="{DynamicResource PrimaryTextBrush}" />
-                    <PasswordBox x:Name="ConfirmPasswordBox" Margin="3" Padding="10,8" MinHeight="36"
-                                 PasswordChanged="ConfirmPasswordBox_OnPasswordChanged" />
-                    <Button Content="حفظ كلمة المرور والمتابعة" Command="{Binding ChangePasswordCommand}"
-                            Background="{DynamicResource AccentBrush}" Foreground="White" Margin="3,10,3,0" />
-                </StackPanel>
                 <TextBlock Text="{Binding Message}" Foreground="{DynamicResource AlertBrush}" TextWrapping="Wrap" Margin="3,12,3,0" />
             </StackPanel>
         </Border>

@@ -10,7 +10,7 @@
                 <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                 <StackPanel>
                     <TextBlock Text="إدارة المنتجات" FontSize="23" FontWeight="SemiBold" />
-                    <TextBlock Text="اختر منتجاً من الجدول لعرض تفاصيله وتعديل بياناته." Foreground="{StaticResource SubtleBrush}" Margin="0,4,0,8" />
+                    <TextBlock Text="اختر منتجاً من الجدول لعرض بياناته." Foreground="{StaticResource SubtleBrush}" Margin="0,4,0,8" />
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="بحث بالاسم أو الرمز أو الباركود" VerticalAlignment="Center" Margin="4" />
                         <TextBox Width="330" Padding="10,6" VerticalContentAlignment="Center"
@@ -23,7 +23,8 @@
                         <Button Content="بحث" Command="{Binding SearchCommand}" />
                     </StackPanel>
                 </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center"
+                            Visibility="{Binding CanEdit, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <Button Content="إضافة منتج" Command="{Binding NewProductCommand}" Background="{DynamicResource AccentBrush}" Foreground="White" />
                     <Button Content="تعديل" Command="{Binding EditCommand}" IsEnabled="{Binding Selected, Converter={StaticResource NotNullToBooleanConverter}}" />
                     <Button Content="حذف" Command="{Binding DeactivateCommand}" IsEnabled="{Binding Selected, Converter={StaticResource NotNullToBooleanConverter}}" />
@@ -78,7 +79,7 @@
                             <TextBlock Grid.Row="4" Text="سعر البيع" Foreground="{StaticResource SubtleBrush}" Margin="0,9,0,0" />
                             <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Selected.SellingPrice, StringFormat={}{0:N2}}" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" Margin="0,9,0,0" />
                             <TextBlock Grid.Row="5" Text="سعر التكلفة" Foreground="{StaticResource SubtleBrush}" Margin="0,9,0,0"
-                                       Visibility="{Binding DataContext.CanManagePrices, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                       Visibility="{Binding DataContext.CanManagePrices, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}" />
                             <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Selected.CostPrice, StringFormat={}{0:N2}}" Margin="0,9,0,0"
                                        Visibility="{Binding DataContext.CanManagePrices, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}" />
                             <TextBlock Grid.Row="6" Text="كمية المحل" Foreground="{StaticResource SubtleBrush}" Margin="0,9,0,0" />

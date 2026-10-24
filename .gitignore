@@ -1,3 +1,4 @@
 .vs/
 **/bin/
 **/obj/
+src/Cashier.UI/google-credentials.json

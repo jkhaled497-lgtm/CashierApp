@@ -36,7 +36,8 @@ public sealed partial class PurchaseEntryViewModel(
     public ObservableCollection<Product> Products { get; } = [];
     public ObservableCollection<PurchaseDraftLine> Items { get; } = [];
     public IReadOnlyList<PaymentMethod> PaymentMethods { get; } = [PaymentMethod.Cash, PaymentMethod.CreditCard];
-    public bool CanCreatePurchase => session.Current?.Role is UserRole.Admin or UserRole.Manager;
+    public bool CanCreatePurchase => session.Current is not null;
+    public bool CanManageCatalog => session.Current?.CanManageCatalog == true;
     public decimal Subtotal => Money(Items.Sum(item => item.UnitPrice * item.Quantity));
     public decimal DiscountTotal => Money(Items.Sum(item => item.DiscountAmount));
     public decimal GrandTotal => Money(Math.Max(0, Subtotal - DiscountTotal));
@@ -119,9 +120,9 @@ public sealed partial class PurchaseEntryViewModel(
     [RelayCommand]
     private async Task CreateProductAsync()
     {
-        if (!CanCreatePurchase)
+        if (!CanManageCatalog)
         {
-            Status = "تتطلب إضافة المنتجات صلاحية المدير أو مدير النظام.";
+            Status = "إضافة المنتجات متاحة لمدير النظام فقط.";
             return;
         }
 

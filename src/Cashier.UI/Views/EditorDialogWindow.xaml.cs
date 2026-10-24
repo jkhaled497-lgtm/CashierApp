@@ -148,10 +148,8 @@ public partial class EditorDialogWindow : FluentWindow
                 => "الراتب الأساسي لا يمكن أن يكون سالباً.",
             UserEditorForm user when string.IsNullOrWhiteSpace(user.Username) || user.Username.Trim().Length < 3
                 => "يجب أن يتكون اسم المستخدم من 3 أحرف على الأقل.",
-            UserEditorForm user when user.IsNew && user.Password.Length < 12
-                => "يجب أن تتكون كلمة المرور من 12 حرفاً على الأقل.",
-            UserEditorForm user when !user.IsNew && !string.IsNullOrEmpty(user.Password) && user.Password.Length < 12
-                => "كلمة المرور الجديدة يجب أن تتكون من 12 حرفاً على الأقل.",
+            UserEditorForm user when user.IsNew && string.IsNullOrEmpty(user.Password)
+                => "كلمة المرور مطلوبة للحساب الجديد.",
             _ => null
         };
         if (validationMessage is not null)

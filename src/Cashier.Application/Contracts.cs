@@ -5,7 +5,7 @@ namespace Cashier.Application;
 public sealed record UserSession(int UserId, string Username, UserRole Role, int? EmployeeId, bool PasswordChangeRequired = false)
 {
     public bool CanApplyGlobalDiscount => Role is UserRole.Admin or UserRole.Manager;
-    public bool CanManageCatalog => Role is UserRole.Admin or UserRole.Manager;
+    public bool CanManageCatalog => Role == UserRole.Admin;
 }
 
 public sealed record ProductSearch(string? Text = null, int? CategoryId = null);
@@ -54,8 +54,9 @@ public sealed record CreateDailyProductRequest(
     decimal Quantity,
     int? CustomerId,
     int? UserId,
-    decimal? AmountPaid = null,
-    PaymentMethod PaymentMethod = PaymentMethod.Cash);
+    decimal AmountPaid = 0,
+    PaymentMethod PaymentMethod = PaymentMethod.Cash,
+    decimal DiscountAmount = 0);
 public sealed record CustomerAccountReport(
     string CustomerCode,
     string CustomerName,
@@ -133,7 +134,8 @@ public interface IDailySheetService
         int? customerId,
         decimal? amountPaid = null,
         PaymentMethod? paymentMethod = null,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        decimal? discountAmount = null);
     Task<IReadOnlyList<StockAdjustment>> GetWarehouseMovementsAsync(
         DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<CustomerLedgerEntry>> GetCustomerMovementsAsync(

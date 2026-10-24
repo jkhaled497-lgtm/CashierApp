@@ -43,6 +43,12 @@ The application loads this machine-level file after the bundled development sett
 
 The database configuration is kept under `C:\ProgramData\Cashier`, outside the installation directory. This is intentional: the updater replaces the dedicated installation directory, while leaving the client's connection settings intact. The application needs internet access both to reach MonsterASP and to check GitHub for updates; self-contained publishing only removes the .NET runtime prerequisite.
 
+### Database backups
+
+The home page's **نسخة احتياطية** button creates and verifies a SQL Server `.bak` file in the `Backups` folder beside the application. The application also attempts a backup every day at 11:00 PM local time while it is running. Grant the SQL Server service account (shown as **Log On As** in SQL Server Configuration Manager) Modify permission on the published `Backups` folder, and ensure the configured SQL login has database backup permission (for example, `db_backupoperator`). Backup files contain the full database; restrict access to the folder and copy backups to external storage regularly. A backup on the same computer is not protection from disk failure.
+
+The updater is configured not to clear the installation directory so it does not delete the `Backups` folder. When installing manually from USB, keep the existing `Backups` folder rather than replacing or deleting it. The application must be open at 11:00 PM for the scheduled backup to run; use the home-page button for a backup at any other time.
+
 ### GitHub Releases auto-update
 
 The login screen displays the installed version and has a link to check for and install the latest version from `https://raw.githubusercontent.com/jkhaled497-lgtm/CashierApp/main/version.xml`. The check starts when the user clicks the link. When an update exists, AutoUpdater.NET downloads and installs it automatically; the client does not need to visit the customer computer or manually replace its files. Update-check errors are shown. Do not install or run the application from a USB root or a folder containing user files.
@@ -68,7 +74,7 @@ $publish = "src\Cashier.UI\bin\Release\net8.0-windows\win-x64\publish"
 Compress-Archive -Path "$publish\*" -DestinationPath "Cashier.UI-win-x64.zip" -Force
 ```
 
-Keep the production configuration outside the ZIP and never commit credentials to GitHub. The updater's `ClearAppDirectory` behavior removes files from the installation directory before extraction, so install the application in its own folder and back up any local files before updating.
+Keep the production configuration outside the ZIP and never commit credentials to GitHub. Install the application in its own folder and preserve the `Backups` directory when updating manually.
 
 ## Included
 
@@ -78,7 +84,7 @@ Keep the production configuration outside the ZIP and never commit credentials t
 - Product, category, brand, and supplier CRUD; locally selected product images; generated internal identifiers; barcode scanning and live product search/dropdown by name/barcode/brand/category. Product selling price must be at least cost; editing products also allows changing their active state. Cost prices are only shown to administrators.
 - Customer and supplier screens with side-by-side records and selected-account ledgers; supplier opening balances, additional charges, cash/card repayments, and retained paginated balance histories.
 - Separate warehouse and shop balances per product. New products accept opening shop and warehouse quantities, recorded in the inventory history. The product list and POS show shop quantity only; the inventory screen shows both balances. Inventory movements are limited to adding stock to the warehouse or transferring it from the warehouse to the shop. Purchases add stock to the warehouse; sales validate and deduct shop stock only.
-- Daily sheet with four date-filtered tabs for non-invoice shop sales, warehouse movements, customer account movements, and supplier account movements. Editing a daily sale or warehouse movement applies the quantity difference to the related stock balance.
+- Daily sheet with four date-filtered tabs for non-invoice shop sales, warehouse movements, customer account movements, and supplier account movements. Shop sales support one fixed discount on the full sale quantity (for example, a 10 discount on 4 units deducts 10 from the combined total). Editing a daily sale or warehouse movement applies the quantity difference to the related stock balance.
 - Daily journal report for a selected date, combining sales and purchase invoices, daily sales, warehouse entries/transfers, customer and supplier charges/payments, and expenses. Entries retain their notes or show an automatic description, with daily financial and quantity totals.
 - Date-range top-selling-products report with quantities sold and CSV export; voided and refunded invoices are excluded.
 - Expense entry and date-range reports/CSV export for receipts such as electricity and phone top-ups; expense records include date, amount, notes, and user attribution.

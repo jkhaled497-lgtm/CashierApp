@@ -42,10 +42,11 @@ public sealed class DailySheetService(IDbContextFactory<CashierDbContext> contex
             ?? throw new KeyNotFoundException("المنتج غير موجود أو غير نشط.");
         if (product.CurrentStock < request.Quantity)
             throw new InvalidOperationException("كمية المحل غير كافية لإتمام البيع.");
-        var total = Money(product.SellingPrice * request.Quantity);
-        var amountPaid = request.AmountPaid is { } requestedAmountPaid
-            ? Money(requestedAmountPaid)
-            : total;
+        var discountAmount = Money(request.DiscountAmount);
+        var subtotal = Money(product.SellingPrice * request.Quantity);
+        ValidateDiscount(subtotal, discountAmount);
+        var total = Money(subtotal - discountAmount);
+        var amountPaid = Money(request.AmountPaid);
         ValidatePayment(total, amountPaid, request.PaymentMethod);
 
         Customer? customer = null;
@@ -71,6 +72,7 @@ public sealed class DailySheetService(IDbContextFactory<CashierDbContext> contex
             Quantity = request.Quantity,
             UnitSellingPrice = product.SellingPrice,
             UnitCostPrice = product.CostPrice,
+            DiscountAmount = discountAmount,
             AmountPaid = amountPaid,
             PaymentMethod = request.PaymentMethod,
             Customer = customer,
@@ -102,7 +104,8 @@ public sealed class DailySheetService(IDbContextFactory<CashierDbContext> contex
         int? customerId,
         decimal? amountPaid = null,
         PaymentMethod? paymentMethod = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        decimal? discountAmount = null)
     {
         if (quantity <= 0)
             throw new ArgumentOutOfRangeException(nameof(quantity), "كمية البيع يجب أن تكون أكبر من صفر.");
@@ -120,14 +123,18 @@ public sealed class DailySheetService(IDbContextFactory<CashierDbContext> contex
 
         var unitSellingPrice = entry.UnitSellingPrice ?? product.SellingPrice;
         var unitCostPrice = entry.UnitCostPrice ?? product.CostPrice;
-        var total = Money(unitSellingPrice * quantity);
+        var subtotal = Money(unitSellingPrice * quantity);
+        var newDiscountAmount = Money(discountAmount ?? entry.DiscountAmount);
+        ValidateDiscount(subtotal, newDiscountAmount);
+        var total = Money(subtotal - newDiscountAmount);
         var newAmountPaid = amountPaid is { } specifiedAmount
             ? Money(specifiedAmount)
             : total;
         var newPaymentMethod = paymentMethod ?? entry.PaymentMethod;
         ValidatePayment(total, newAmountPaid, newPaymentMethod);
         var oldRemaining = Money(
-            Money((entry.UnitSellingPrice ?? product.SellingPrice) * entry.Quantity) - entry.AmountPaid);
+            Money((entry.UnitSellingPrice ?? product.SellingPrice) * entry.Quantity) -
+            entry.DiscountAmount - entry.AmountPaid);
         var newRemaining = Money(total - newAmountPaid);
 
         Customer? customer = null;
@@ -148,6 +155,7 @@ public sealed class DailySheetService(IDbContextFactory<CashierDbContext> contex
         entry.Customer = customer;
         entry.UnitSellingPrice = unitSellingPrice;
         entry.UnitCostPrice = unitCostPrice;
+        entry.DiscountAmount = newDiscountAmount;
         entry.AmountPaid = newAmountPaid;
         entry.PaymentMethod = newPaymentMethod;
         await db.SaveChangesAsync(cancellationToken);
@@ -224,6 +232,14 @@ public sealed class DailySheetService(IDbContextFactory<CashierDbContext> contex
         string.Equals(db.Database.ProviderName, "Microsoft.EntityFrameworkCore.Sqlite", StringComparison.Ordinal);
 
     private static decimal Money(decimal amount) => Math.Round(amount, 2, MidpointRounding.AwayFromZero);
+
+    private static void ValidateDiscount(decimal subtotal, decimal discountAmount)
+    {
+        if (discountAmount < 0 || discountAmount > subtotal)
+            throw new ArgumentOutOfRangeException(
+                nameof(discountAmount),
+                "الخصم يجب أن يكون بين صفر وإجمالي البيع.");
+    }
 
     private static void ValidatePayment(decimal total, decimal amountPaid, PaymentMethod method)
     {

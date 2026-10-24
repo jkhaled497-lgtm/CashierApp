@@ -68,6 +68,14 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
             DataContext is not ShellViewModel viewModel)
             return;
 
+        if (!viewModel.IsAdmin && tab.Header?.ToString() is not (
+                "الرئيسية" or "نقطة البيع" or "المنتجات" or "فاتورة شراء" or
+                "فواتير الشراء" or "التقارير" or "الشيت اليومي"))
+        {
+            MainTabs.SelectedIndex = 0;
+            return;
+        }
+
         switch (tab.Header?.ToString())
         {
             case "الرئيسية": await viewModel.RefreshLowStockProductsAsync(); break;

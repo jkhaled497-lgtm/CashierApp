@@ -170,10 +170,11 @@ public sealed class DailyProduct
     public decimal Quantity { get; set; }
     public decimal? UnitSellingPrice { get; set; }
     public decimal? UnitCostPrice { get; set; }
+    public decimal DiscountAmount { get; set; }
     public decimal AmountPaid { get; set; }
     public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;
     public decimal TotalAmount => Math.Round(
-        (UnitSellingPrice ?? Product?.SellingPrice ?? 0) * Quantity,
+        (UnitSellingPrice ?? Product?.SellingPrice ?? 0) * Quantity - DiscountAmount,
         2,
         MidpointRounding.AwayFromZero);
     public decimal RemainingAmount => Math.Max(0, TotalAmount - AmountPaid);

@@ -275,7 +275,8 @@ public sealed class InvoiceService(IDbContextFactory<CashierDbContext> contextFa
             .GroupBy(sale => BusinessTime.ToEgyptLocal(sale.CreatedAt).Date)
             .ToDictionary(day => day.Key, day => (
                 DailySaleCount: day.Count(),
-                SalesTotal: day.Sum(sale => Money((sale.UnitSellingPrice ?? sale.Product.SellingPrice) * sale.Quantity)),
+                SalesTotal: day.Sum(sale => Money(
+                    (sale.UnitSellingPrice ?? sale.Product.SellingPrice) * sale.Quantity - sale.DiscountAmount)),
                 CostTotal: day.Sum(sale => Money((sale.UnitCostPrice ?? sale.Product.CostPrice) * sale.Quantity))));
         var dailyPaymentsByDate = dailySales
             .GroupBy(sale => BusinessTime.ToEgyptLocal(sale.CreatedAt).Date)

@@ -200,7 +200,20 @@ public sealed class InventoryAndExpenseTests
             var savedExpense = await verify.Expenses.SingleAsync(item => item.Id == expense.Id);
             Assert.Equal(BusinessTime.ToUtc(date), savedExpense.CreatedAt);
             Assert.Equal(manager.Id, savedExpense.UserId);
+            verify.Expenses.Add(new BusinessExpense
+            {
+                Title = "مصروف خارج الفترة",
+                Amount = 50m,
+                CreatedAt = expense.CreatedAt.AddDays(-1)
+            });
+            await verify.SaveChangesAsync();
         }
+
+        var periodExpenses = await service.GetForPeriodAsync(
+            expense.CreatedAt.AddMinutes(-1),
+            expense.CreatedAt.AddMinutes(1));
+        var periodExpense = Assert.Single(periodExpenses);
+        Assert.Equal(expense.Id, periodExpense.Id);
 
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.CreateAsync(
             new CreateExpenseRequest("مصروف غير مصرح", 20m, date, null, cashier.Id)));

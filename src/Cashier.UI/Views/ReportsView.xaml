@@ -17,7 +17,7 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel>
                     <TextBlock Text="التقارير والتحليلات" FontSize="24" FontWeight="SemiBold" />
-                    <TextBlock Text="ملخص المبيعات والإيرادات وأرصدة العملاء والموردين والمصروفات"
+                    <TextBlock Text="ملخص المبيعات والإيرادات وأرصدة العملاء والموردين"
                                Foreground="{DynamicResource SubtleBrush}" Margin="0,3,0,0" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">

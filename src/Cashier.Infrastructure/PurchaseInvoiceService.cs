@@ -46,8 +46,8 @@ public sealed class PurchaseInvoiceService(IDbContextFactory<CashierDbContext> c
             .Where(user => user.Id == request.UserId && user.IsActive)
             .Select(user => (UserRole?)user.Role)
             .SingleOrDefaultAsync(cancellationToken);
-        if (account is not (UserRole.Admin or UserRole.Manager))
-            throw new UnauthorizedAccessException("تتطلب فواتير الشراء صلاحية المدير أو مدير النظام.");
+        if (account is not (UserRole.Admin or UserRole.Manager or UserRole.Cashier))
+            throw new UnauthorizedAccessException("يجب تسجيل الدخول لإنشاء فاتورة شراء.");
 
         var supplier = await db.Suppliers.SingleOrDefaultAsync(
             item => item.Id == request.SupplierId && item.IsActive, cancellationToken)
@@ -178,8 +178,8 @@ public sealed class PurchaseInvoiceService(IDbContextFactory<CashierDbContext> c
             .Where(user => user.Id == request.UserId && user.IsActive)
             .Select(user => (UserRole?)user.Role)
             .SingleOrDefaultAsync(cancellationToken);
-        if (role is not (UserRole.Admin or UserRole.Manager))
-            throw new UnauthorizedAccessException("تتطلب تسديد فواتير المورد صلاحية المدير أو مدير النظام.");
+        if (role is not (UserRole.Admin or UserRole.Manager or UserRole.Cashier))
+            throw new UnauthorizedAccessException("يجب تسجيل الدخول لتسديد فاتورة المورد.");
 
         var invoice = await db.PurchaseInvoices.Include(item => item.Supplier)
             .Include(item => item.Items).Include(item => item.Payments)

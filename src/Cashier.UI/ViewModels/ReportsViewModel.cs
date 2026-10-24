@@ -38,7 +38,7 @@ public sealed partial class ReportsViewModel(
     [ObservableProperty] private bool isJournalLoading;
 
     public bool IsAdmin => session.Current?.Role == UserRole.Admin;
-    public bool CanManageExpenses => session.Current?.Role is UserRole.Admin or UserRole.Manager;
+    public bool CanManageExpenses => IsAdmin;
     public decimal CustomerBalanceTotal => CustomerRows.Sum(x => x.CurrentBalance);
     public decimal SupplierBalanceTotal => SupplierRows.Sum(x => x.CurrentBalance);
     public decimal PeriodSalesTotal => Rows.Sum(x => x.SalesTotal);
@@ -97,7 +97,15 @@ public sealed partial class ReportsViewModel(
             var to = BusinessTime.ToUtc(ToDate.Date.AddDays(1));
             var errors = new List<string>();
 
-            try { Replace(Rows, await invoices.GetDailyReportsAsync(from, to)); }
+            try
+            {
+                var dailyReports = await invoices.GetDailyReportsAsync(from, to);
+                if (!IsAdmin)
+                    dailyReports = dailyReports
+                        .Select(row => row with { CostTotal = 0, ProfitTotal = 0 })
+                        .ToArray();
+                Replace(Rows, dailyReports);
+            }
             catch (Exception exception) { Rows.Clear(); errors.Add($"العمل اليومي: {exception.Message}"); }
 
             try { Replace(RevenueRows, await invoices.GetRevenueReportsAsync(from, to)); }

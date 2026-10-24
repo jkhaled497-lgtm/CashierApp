@@ -44,7 +44,8 @@
                                     Background="{DynamicResource AccentBrush}" Foreground="White" />
                         </StackPanel>
                         <Button Content="إضافة منتج جديد" Command="{Binding CreateProductCommand}"
-                                DockPanel.Dock="Right" />
+                                DockPanel.Dock="Right"
+                                Visibility="{Binding CanManageCatalog, Converter={StaticResource BooleanToVisibilityConverter}}" />
                     </DockPanel>
                     <DataGrid Grid.Row="1" ItemsSource="{Binding Items}" AutoGenerateColumns="False"
                               CanUserAddRows="False" SelectionMode="Single" MinHeight="0"

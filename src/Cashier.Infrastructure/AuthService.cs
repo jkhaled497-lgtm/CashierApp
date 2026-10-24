@@ -8,16 +8,37 @@ public sealed class AuthService(IDbContextFactory<CashierDbContext> contextFacto
     public async Task EnsureInitialAdminAsync(CancellationToken cancellationToken = default)
     {
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
-        if (await db.Users.AnyAsync(cancellationToken))
+        var existingAdmin = await db.Users
+            .FirstOrDefaultAsync(user => user.Role == Domain.UserRole.Admin, cancellationToken);
+        if (existingAdmin is not null)
+        {
+            if (existingAdmin.Username == "admin" &&
+                existingAdmin.PasswordChangeRequired &&
+                BCrypt.Net.BCrypt.Verify("Admin@12345", existingAdmin.PasswordHash))
+            {
+                var replacementSalt = BCrypt.Net.BCrypt.GenerateSalt(12);
+                existingAdmin.Salt = replacementSalt;
+                existingAdmin.PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin1234", replacementSalt);
+            }
+            if (existingAdmin.PasswordChangeRequired)
+            {
+                existingAdmin.PasswordChangeRequired = false;
+                await db.SaveChangesAsync(cancellationToken);
+            }
             return;
+        }
+
+        var username = await db.Users.AnyAsync(user => user.Username == "admin", cancellationToken)
+            ? "admin-setup"
+            : "admin";
         var salt = BCrypt.Net.BCrypt.GenerateSalt(12);
         db.Users.Add(new Domain.UserAccount
         {
-            Username = "admin",
+            Username = username,
             Salt = salt,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@12345", salt),
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin1234", salt),
             Role = Domain.UserRole.Admin,
-            PasswordChangeRequired = true
+            PasswordChangeRequired = false
         });
         await db.SaveChangesAsync(cancellationToken);
     }
@@ -32,8 +53,7 @@ public sealed class AuthService(IDbContextFactory<CashierDbContext> contextFacto
     {
         if (string.IsNullOrWhiteSpace(username) || username.Trim().Length < 3)
             throw new ArgumentException("يجب أن يتكون اسم المستخدم من 3 أحرف على الأقل.");
-        if (password.Length < 12)
-            throw new ArgumentException("يجب أن تتكون كلمة مرور مدير النظام من 12 حرفاً على الأقل.");
+        ArgumentException.ThrowIfNullOrEmpty(password);
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
         if (await db.Users.AnyAsync(cancellationToken))
             throw new InvalidOperationException("إنشاء مدير النظام الأول متاح قبل إنشاء أي حساب فقط.");
@@ -66,8 +86,7 @@ public sealed class AuthService(IDbContextFactory<CashierDbContext> contextFacto
 
     public async Task ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default)
     {
-        if (newPassword.Length < 12)
-            throw new ArgumentException("يجب أن تتكون كلمة المرور الجديدة من 12 حرفاً على الأقل.");
+        ArgumentException.ThrowIfNullOrEmpty(newPassword);
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
         var account = await db.Users.SingleOrDefaultAsync(x => x.Id == userId && x.IsActive, cancellationToken)
             ?? throw new UnauthorizedAccessException("الحساب غير موجود أو غير مفعل.");

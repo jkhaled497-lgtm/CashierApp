@@ -88,7 +88,7 @@ public partial class ProductsViewModel(
     [RelayCommand]
     private async Task NewProductAsync()
     {
-        if (!CanEdit) { Status = "تتطلب إدارة المنتجات صلاحية المدير أو مدير النظام."; return; }
+        if (!CanEdit) { Status = "إدارة المنتجات متاحة لمدير النظام فقط."; return; }
         var product = new Product
         {
             Sku = $"SKU-{Guid.NewGuid():N}"[..12],
@@ -102,7 +102,7 @@ public partial class ProductsViewModel(
     [RelayCommand]
     private async Task EditAsync()
     {
-        if (!CanEdit || Selected is null) { Status = "اختر منتجاً وتأكد من امتلاكك صلاحية إدارة المنتجات."; return; }
+        if (!CanEdit || Selected is null) { Status = "إدارة المنتجات متاحة لمدير النظام فقط."; return; }
         var editedProduct = Copy(Selected);
         if (editor.Show(editedProduct, "تعديل بيانات المنتج", Categories, Brands, canManagePrices: CanManagePrices))
             await SaveProductAsync(editedProduct);
@@ -132,7 +132,7 @@ public partial class ProductsViewModel(
     [RelayCommand]
     private async Task DeactivateAsync()
     {
-        if (!CanEdit || Selected is null) { Status = "اختر منتجاً وتأكد من امتلاكك صلاحية إدارة المنتجات."; return; }
+        if (!CanEdit || Selected is null) { Status = "إدارة المنتجات متاحة لمدير النظام فقط."; return; }
         if (Selected.Id == 0) { Items.Remove(Selected); Selected = null; return; }
         try { await products.DeleteAsync(Selected.Id); Status = "تم حذف المنتج (إيقافه مع الاحتفاظ بسجل الفواتير)."; await LoadAsync(); }
         catch (Exception e) { Status = $"تعذر حذف المنتج: {e.Message}"; }
@@ -894,7 +894,8 @@ public sealed partial class ShellViewModel(
     ReportsViewModel reports,
     DailySheetViewModel dailySheet,
     IProductService productService,
-    SessionManager session) : ObservableObject
+    SessionManager session,
+    Cashier.UI.Services.DatabaseBackupService backupService) : ObservableObject
 {
     private static readonly AccentPaletteOption[] PaletteOptions =
     [
@@ -907,6 +908,8 @@ public sealed partial class ShellViewModel(
     [ObservableProperty] private bool isDarkTheme = true;
     [ObservableProperty] private AccentPaletteOption selectedAccentPalette = PaletteOptions[0];
     [ObservableProperty] private string lowStockStatus = string.Empty;
+    [ObservableProperty] private string backupStatus = string.Empty;
+    [ObservableProperty] private bool isBackupInProgress;
     public IReadOnlyList<AccentPaletteOption> AccentPalettes => PaletteOptions;
     public ObservableCollection<Product> LowStockProducts { get; } = [];
     public int LowStockCount => LowStockProducts.Count;
@@ -931,8 +934,51 @@ public sealed partial class ShellViewModel(
         UserRole.Cashier => "كاشير",
         _ => string.Empty
     }} · {session.Current?.Username}";
-    public bool CanManageAdministration => session.Current?.Role is UserRole.Admin or UserRole.Manager;
+    public bool CanManageAdministration => session.Current?.Role == UserRole.Admin;
+    public bool IsAdmin => session.Current?.Role == UserRole.Admin;
     public bool CanManageUsers => session.Current?.Role == UserRole.Admin;
+
+    [RelayCommand]
+    private async Task BackupNowAsync()
+    {
+        if (!CanManageUsers)
+        {
+            BackupStatus = "النسخ الاحتياطي متاح لمدير النظام فقط.";
+            return;
+        }
+
+        if (IsBackupInProgress)
+            return;
+
+        IsBackupInProgress = true;
+        BackupStatus = "جارٍ إنشاء النسخة الاحتياطية...";
+        try
+        {
+            var result = await backupService.ExecuteBackupAsync();
+            var backupName = System.IO.Path.GetFileName(result.LocalBackupPath);
+            BackupStatus = result.GoogleDrive.Status switch
+            {
+                GoogleDriveBackupStatus.Uploaded =>
+                    $"تم حفظ النسخة محلياً ورفعها إلى Google Drive: {backupName}",
+                GoogleDriveBackupStatus.UploadedRetentionFailed =>
+                    $"تم حفظ النسخة ورفعها إلى Drive، لكن تعذر تطبيق حذف النسخ القديمة: {result.GoogleDrive.Detail}",
+                GoogleDriveBackupStatus.Offline =>
+                    $"تم حفظ النسخة محلياً: {backupName}. {result.GoogleDrive.Detail}",
+                GoogleDriveBackupStatus.NotConfigured =>
+                    $"تم حفظ النسخة محلياً: {backupName}. لم يتم الرفع: {result.GoogleDrive.Detail}",
+                _ =>
+                    $"تم حفظ النسخة محلياً: {backupName}. {result.GoogleDrive.Detail}"
+            };
+        }
+        catch (Exception exception)
+        {
+            BackupStatus = $"فشل إنشاء النسخة الاحتياطية: {exception.Message}";
+        }
+        finally
+        {
+            IsBackupInProgress = false;
+        }
+    }
 
     public async Task RefreshLowStockProductsAsync()
     {

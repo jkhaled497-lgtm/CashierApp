@@ -141,7 +141,7 @@ public sealed class InvoiceSettlementTests
     }
 
     [Fact]
-    public async Task InitialAdmin_IsSeededAndMustChangePassword()
+    public async Task InitialAdmin_CanLoginWithoutChangingDefaultPassword()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
@@ -152,14 +152,10 @@ public sealed class InvoiceSettlementTests
 
         var auth = new AuthService(factory);
         await auth.EnsureInitialAdminAsync();
-        var login = await auth.LoginAsync("admin", "Admin@12345");
+        var login = await auth.LoginAsync("admin", "admin1234");
 
         Assert.True(login.Succeeded);
-        Assert.True(login.Session!.PasswordChangeRequired);
-        await auth.ChangePasswordAsync(login.Session.UserId, "Admin@12345", "NewSecure@2026");
-        var secondLogin = await auth.LoginAsync("admin", "NewSecure@2026");
-        Assert.True(secondLogin.Succeeded);
-        Assert.False(secondLogin.Session!.PasswordChangeRequired);
+        Assert.False(login.Session!.PasswordChangeRequired);
     }
 
     private sealed class TestContextFactory(DbContextOptions<CashierDbContext> options) : IDbContextFactory<CashierDbContext>

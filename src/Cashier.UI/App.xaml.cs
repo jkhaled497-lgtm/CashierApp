@@ -51,7 +51,7 @@ public partial class App : System.Windows.Application
         AutoUpdater.ShowSkipButton = false;
         AutoUpdater.ShowRemindLaterButton = false;
         AutoUpdater.ReportErrors = true;
-        AutoUpdater.ClearAppDirectory = true;
+        AutoUpdater.ClearAppDirectory = false;
         AutoUpdater.InstallationPath = AppContext.BaseDirectory;
         AutoUpdater.DownloadPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -128,12 +128,15 @@ public partial class App : System.Windows.Application
                             reloadOnChange: false)
                         .AddEnvironmentVariables();
                 })
-                .ConfigureServices((context, services) =>
+                .ConfigureServices((_, services) =>
                 {
-                    var connectionString = context.Configuration.GetConnectionString("Cashier")
-                        ?? throw new InvalidOperationException(
-                            "سلسلة اتصال قاعدة بيانات Cashier غير موجودة. أضفها في C:\\ProgramData\\Cashier\\appsettings.json أو في متغير البيئة ConnectionStrings__Cashier.");
-                    services.AddCashierInfrastructure(connectionString);
+                    var databasePath = Path.Combine(AppContext.BaseDirectory, "cashier.db");
+                    services.AddCashierInfrastructure(databasePath);
+                    services.AddHttpClient("GoogleDriveConnectivity", client =>
+                        client.Timeout = TimeSpan.FromSeconds(3));
+                    services.AddSingleton<GoogleDriveBackupService>();
+                    services.AddSingleton<DatabaseBackupService>();
+                    services.AddHostedService<DailyDatabaseBackupService>();
                     services.AddSingleton<SessionManager>();
                     services.AddSingleton<IPrintService, ThermalReceiptPrintService>();
                     services.AddSingleton<IPurchaseBillPrintService, PurchaseBillPrintService>();
@@ -188,8 +191,8 @@ public partial class App : System.Windows.Application
             host?.Dispose();
             host = null;
             System.Windows.MessageBox.Show(
-                $"تعذر تشغيل التطبيق أو الاتصال بقاعدة بيانات SQL Server. تحقق من الخادم وقاعدة البيانات والصلاحيات وشهادة TLS.\n\nالتفاصيل: {exception.Message}",
-                "تعذر الاتصال بقاعدة البيانات",
+                $"تعذرت تهيئة قاعدة بيانات SQLite المحلية.\n\nالتفاصيل: {exception.Message}",
+                "تعذر تهيئة قاعدة البيانات",
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Error);
             Shutdown(-1);

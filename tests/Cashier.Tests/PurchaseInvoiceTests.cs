@@ -84,19 +84,22 @@ public sealed class PurchaseInvoiceTests
     }
 
     [Fact]
-    public async Task CreateInvoice_RequiresManagerRole()
+    public async Task CreateInvoice_AllowsCashierRole()
     {
         await using var factory = await CreateDatabaseAsync();
         var (supplier, product, user) = await SeedAsync(factory, UserRole.Cashier);
         var service = new PurchaseInvoiceService(factory);
 
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.CreateAsync(
+        var invoice = await service.CreateAsync(
             new CreatePurchaseInvoiceRequest(
                 supplier.Id,
                 [new PurchaseLineRequest(product.Id, 10m, 1m, 0m)],
                 0m,
                 PaymentMethod.Cash,
-                user.Id)));
+                user.Id));
+
+        Assert.Equal(PurchaseInvoiceStatus.Unpaid, invoice.Status);
+        Assert.Equal(10m, invoice.GrandTotal);
     }
 
     private static async Task<TestContextFactory> CreateDatabaseAsync()

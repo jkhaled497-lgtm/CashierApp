@@ -13,12 +13,30 @@ public partial class LoginWindow : Wpf.Ui.Controls.FluentWindow
         this.viewModel = viewModel;
         DataContext = viewModel;
         viewModel.LoggedIn += OnLoggedIn;
-        Loaded += async (_, _) => await viewModel.InitializeCommand.ExecuteAsync(null);
+        Loaded += OnLoginWindowLoaded;
     }
 
-    private void PasswordBox_OnPasswordChanged(object sender, RoutedEventArgs e) => viewModel.Password = PasswordBox.Password;
-    private void NewPasswordBox_OnPasswordChanged(object sender, RoutedEventArgs e) => viewModel.NewPassword = NewPasswordBox.Password;
-    private void ConfirmPasswordBox_OnPasswordChanged(object sender, RoutedEventArgs e) => viewModel.ConfirmPassword = ConfirmPasswordBox.Password;
+    private async void OnLoginWindowLoaded(object sender, RoutedEventArgs e)
+    {
+        PasswordBox.Password = viewModel.Password;
+        await viewModel.InitializeCommand.ExecuteAsync(null);
+    }
+
+    private void PasswordBox_OnPasswordChanged(object sender, RoutedEventArgs e)
+    {
+        if (viewModel.IsPasswordVisible)
+            return;
+        viewModel.Password = PasswordBox.Password;
+    }
+
+    private void TogglePasswordVisibility_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (!viewModel.IsPasswordVisible)
+            viewModel.Password = PasswordBox.Password;
+
+        viewModel.TogglePasswordVisibilityCommand.Execute(null);
+        PasswordBox.Password = viewModel.Password;
+    }
 
     private void OnLoggedIn(object? sender, EventArgs e)
     {

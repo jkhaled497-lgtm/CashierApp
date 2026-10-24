@@ -62,7 +62,10 @@ public sealed class DailyJournalReportService(
         entries.AddRange(dailySales.Select(sale =>
         {
             var unitPrice = sale.UnitSellingPrice ?? sale.Product.SellingPrice;
-            var total = Math.Round(unitPrice * sale.Quantity, 2, MidpointRounding.AwayFromZero);
+            var total = Math.Round(
+                unitPrice * sale.Quantity - sale.DiscountAmount,
+                2,
+                MidpointRounding.AwayFromZero);
             var remaining = Math.Max(0, total - sale.AmountPaid);
             return new DailyJournalEntry(
                 sale.CreatedAt,
@@ -73,7 +76,9 @@ public sealed class DailyJournalReportService(
                 $"{sale.ProductName} × {sale.Quantity:0.###}",
                 sale.Quantity,
                 total,
-                $"بيع {sale.ProductName} بإجمالي {total:N2}؛ المدفوع {sale.AmountPaid:N2} والمتبقي {remaining:N2} بدون فاتورة.");
+                $"بيع {sale.ProductName} بإجمالي {total:N2}" +
+                (sale.DiscountAmount > 0 ? $" بعد خصم إجمالي {sale.DiscountAmount:N2}" : string.Empty) +
+                $"؛ المدفوع {sale.AmountPaid:N2} والمتبقي {remaining:N2} بدون فاتورة.");
         }));
 
         var stockMovements = await LoadPeriodAsync(

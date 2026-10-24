@@ -9,6 +9,116 @@ namespace Cashier.Tests;
 public sealed class DailySheetTests
 {
     [Fact]
+    public async Task DailyProductSale_AppliesOneDiscountToWholeQuantityAndReports()
+    {
+        await using var factory = await CreateDatabaseAsync();
+        var product = new Product
+        {
+            Sku = "DAILY-DISCOUNT-01",
+            Name = "منتج بخصم",
+            CurrentStock = 5,
+            SellingPrice = 100,
+            CostPrice = 50
+        };
+        var user = NewUser();
+        var customer = new Customer { CustomerCode = "DAILY-DISCOUNT-C1", FullName = "عميل خصم" };
+        await using (var db = await factory.CreateDbContextAsync())
+        {
+            db.AddRange(product, user, customer);
+            await db.SaveChangesAsync();
+        }
+
+        var service = new DailySheetService(factory);
+        var sale = await service.CreateDailyProductAsync(new CreateDailyProductRequest(
+            product.Id, 4, customer.Id, user.Id, 300, PaymentMethod.CreditCard, 10));
+
+        Assert.Equal(390m, sale.TotalAmount);
+        Assert.Equal(90m, sale.RemainingAmount);
+        Assert.Equal(1m, (await new ProductService(factory).GetByIdAsync(product.Id))!.CurrentStock);
+
+        var from = BusinessTime.ToUtc(BusinessTime.ToEgyptLocal(sale.CreatedAt).Date);
+        var to = BusinessTime.ToUtc(BusinessTime.ToEgyptLocal(sale.CreatedAt).Date.AddDays(1));
+        var invoiceService = new InvoiceService(factory);
+        var dailyReport = Assert.Single(await invoiceService.GetDailyReportsAsync(from, to));
+        Assert.Equal(390m, dailyReport.SalesTotal);
+        Assert.Equal(200m, dailyReport.CostTotal);
+        Assert.Equal(190m, dailyReport.ProfitTotal);
+
+        var journal = Assert.Single((await new DailyJournalReportService(factory).GetForPeriodAsync(from, to))
+            .Where(row => row.Type == DailyJournalType.DailySale));
+        Assert.Equal(390m, journal.Amount);
+        Assert.Contains("خصم إجمالي 10.00", journal.Notes);
+        Assert.Contains("المتبقي 90.00", journal.Notes);
+        var account = Assert.Single(await new CustomerService(factory).GetAccountReportsAsync(from, to));
+        Assert.Equal(90m, account.CurrentBalance);
+
+        await service.UpdateDailyProductAsync(
+            sale.Id, 3, customer.Id, 200, PaymentMethod.CreditCard, discountAmount: 10);
+        await using var verify = await factory.CreateDbContextAsync();
+        var updatedSale = await verify.DailyProducts.SingleAsync(item => item.Id == sale.Id);
+        Assert.Equal(10m, updatedSale.DiscountAmount);
+        Assert.Equal(290m, updatedSale.TotalAmount);
+        Assert.Equal(90m, updatedSale.RemainingAmount);
+        Assert.Equal(90m, (await verify.Customers.SingleAsync(item => item.Id == customer.Id)).CurrentBalance);
+
+        dailyReport = Assert.Single(await invoiceService.GetDailyReportsAsync(from, to));
+        Assert.Equal(290m, dailyReport.SalesTotal);
+        Assert.Equal(140m, dailyReport.ProfitTotal);
+    }
+
+    [Fact]
+    public async Task DailyProductSale_DefaultsAmountPaidToZeroAndRecordsRemainingBalance()
+    {
+        await using var factory = await CreateDatabaseAsync();
+        var product = new Product
+        {
+            Sku = "DAILY-UNPAID-01",
+            Name = "منتج غير مدفوع",
+            CurrentStock = 2,
+            SellingPrice = 100,
+            CostPrice = 50
+        };
+        var customer = new Customer { CustomerCode = "DAILY-UNPAID-C1", FullName = "عميل آجل" };
+        await using (var db = await factory.CreateDbContextAsync())
+        {
+            db.AddRange(product, customer);
+            await db.SaveChangesAsync();
+        }
+
+        var sale = await new DailySheetService(factory).CreateDailyProductAsync(
+            new CreateDailyProductRequest(product.Id, 1, customer.Id, null));
+
+        Assert.Equal(0m, sale.AmountPaid);
+        Assert.Equal(100m, sale.RemainingAmount);
+        await using var verify = await factory.CreateDbContextAsync();
+        Assert.Equal(100m, (await verify.Customers.SingleAsync(item => item.Id == customer.Id)).CurrentBalance);
+    }
+
+    [Fact]
+    public async Task DailyProductSale_RejectsDiscountGreaterThanUnitPrice()
+    {
+        await using var factory = await CreateDatabaseAsync();
+        var product = new Product
+        {
+            Sku = "DAILY-DISCOUNT-02",
+            Name = "منتج خصم غير صالح",
+            CurrentStock = 2,
+            SellingPrice = 10,
+            CostPrice = 5
+        };
+        await using (var db = await factory.CreateDbContextAsync())
+        {
+            db.Products.Add(product);
+            await db.SaveChangesAsync();
+        }
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+            new DailySheetService(factory).CreateDailyProductAsync(
+                new CreateDailyProductRequest(product.Id, 1, null, null, 0, PaymentMethod.Cash, 11)));
+        Assert.Equal(2m, (await new ProductService(factory).GetByIdAsync(product.Id))!.CurrentStock);
+    }
+
+    [Fact]
     public async Task DailyProductSale_UsesShopStockAndQuantityEditsApplyTheDifference()
     {
         await using var factory = await CreateDatabaseAsync();
